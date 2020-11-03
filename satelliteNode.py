@@ -2,6 +2,7 @@
 
 """
 Author: Brandon Lasher
+Secondary: Christian Wagner (Last Update: 11/02/2020)
 
 Contains the implentation for a satellite Node
    A satellite Node contains sensors which feed back in
@@ -29,7 +30,7 @@ class satelliteNode( device ):
 
     #print function
     def __repr__(self):
-        out = "Name: {}, Type: {}, UUID: {}\n".format(  self.getName(), str(self.getDeviceType()), str( self.getUniqueID()  ))
+        out = "Name: {}, Type: {}, UUID: {}\n".format(  self.name, str(self.deviceType), str( self.uniqueID ))
         for k1, v1 in self.sensors.items():
             out += "[{}]\n-----------\n{}\n\n".format(str( v1["sensor"] ),  "\n".join(map(str, v1["history"])))
         return out;

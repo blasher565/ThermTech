@@ -17,9 +17,9 @@ class sensor():
     def __repr__(self):
         return self.sensorType
 
-    #returns new sensor data
-    #  in reality would query the hardware
+    # returns new sensor data
+    # in reality would query the hardware
     def getUpdate( self ):
-        return (datetime.now().isoformat(), random.randint(0,10) )
+        return (datetime.now().isoformat(), random.randint(0,10))
 
 
