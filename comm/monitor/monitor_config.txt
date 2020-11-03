@@ -1,0 +1,18 @@
+// This is a template
+
+// WebMonitor configuration file
+// Created by: Christian Wagner
+
+// local vars
+server=http://serveraddress.com/WebMonitorTarget.php
+interval=2
+timeout=30
+pid=-1
+port=8100
+failport=8101
+secure=yes
+
+// method vars
+method=POST
+user-agent=Java client
+content-type=application/x-www-form-urlencoded
