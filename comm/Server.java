@@ -18,7 +18,7 @@ public class Server {
 
     private static final int COORDINATION_PORT = 18000; // port for communication coordination
     private static final int MAX_NUMBER_CONNECTIONS = 20; // max number of server connections to allow
-    private static ArrayList<interfaces.IgluMessage> queue = new ArrayList<interfaces.IgluMIgluMessageessage>(); // queue for all inter-process messages
+    private static ArrayList<interfaces.IgluMessage> queue = new ArrayList<interfaces.IgluMessage>(); // queue for all inter-process messages
     private static ArrayList<Integer> openPorts = new ArrayList<Integer>(); // list of open ports
     private static ArrayList<Thread> openServers = new ArrayList<Thread>(); // all open ServerSocket threads
 
