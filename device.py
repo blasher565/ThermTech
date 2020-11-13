@@ -15,6 +15,7 @@ class device:
         self.__uniqueID = uniqueID
         self.__deviceType = deviceType
         self.__zoneID = -1
+        self.__connected = False
 
     # Returns dict() with summary of the device information
     def about( self ):
@@ -48,6 +49,16 @@ class device:
     @zoneID.setter
     def zoneID( self, zoneID ):
         self.__zoneID = zoneID
+        
+    # Returns the zoneID
+    @property
+    def connected( self ):
+        return self.__connected
+
+    # Sets the new zoneID
+    @zoneID.setter
+    def connected( self, con ):
+        self.__connected = con
 
 
 if __name__ == "__main__":

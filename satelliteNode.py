@@ -45,7 +45,16 @@ class satelliteNode( device ):
                 self.sensors[index]["history"].append( self.sensors[index]["sensor"].getUpdate() )
             else:
                 pass
-
+            
+    
+    def getLastUpdate( self ):
+        out = {}
+        for k1, v1 in self.sensors.items():
+            if( len(v1["history"]) > 0 ):
+                out[ v1["sensor"]  ] = v1["history"][-1]
+            else:
+                out[ v1["sensor"]  ] = None
+        return out
 
 
 if __name__ == "__main__" :
@@ -59,6 +68,8 @@ if __name__ == "__main__" :
   s.updateSensors(8)
 
   print( s )
+  
+  print( s.getLastUpdate() )
 
 
 
