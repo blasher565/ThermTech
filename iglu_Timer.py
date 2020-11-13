@@ -12,6 +12,7 @@ to sync the various parts
 
 import threading
 import time
+import datetime as dt
 
 class iglu_Timer (threading.Thread):
     def __init__(self, threadID, name):
@@ -23,6 +24,7 @@ class iglu_Timer (threading.Thread):
         self._countSpeed = 1
         self._observers = []
         self._stopevent  = threading.Event()
+        self._time = dt.datetime.now()
        
     def run(self):
         while not( self._stopevent.isSet() ):
@@ -34,7 +36,7 @@ class iglu_Timer (threading.Thread):
             
             #.050 sets the minium sleep and update time for the 
             # counter
-            while(  delay  < .050 ):
+            while(  delay  < .1 ):
                 delay = cntSize / self._countSpeed
                 cntSize = cntSize+1
             
@@ -82,13 +84,47 @@ class iglu_Timer (threading.Thread):
         self._stopevent.set()
         threading.Thread.join(self, timeout)
         
+    def updateAbsTime( self ):
+        hours, mins = divmod(self._counter, 60)
+        days, hours = divmod(hours, 24)
+        print( days, hours, mins )
+        self._time = self._time + dt.timedelta(days=days, hours=hours, minutes=mins)
+        return self._time
+        
+    @property
+    def absTime(self):
+        return self.updateAbsTime()
+    
+    @property
+    def absTimePretty(self):
+        return "{:%b %d, %Y %I:%M %p}".format(self.absTime)
+    
+    @property
+    def relTime(self):
+        return self._counter
+    
+        
 
 global globalTimer
 globalTimer = iglu_Timer(1, "Iglu_Timer")
 globalTimer.start()
+
+
 
 import atexit
 @atexit.register
 def terminate():
     global globalTimer
     globalTimer.join()
+    
+    
+if __name__ == "__main__":
+    print( globalTimer.relTime, globalTimer.absTime )
+    time.sleep(2)
+    print( globalTimer.relTime, globalTimer.absTime )
+    globalTimer.updateSpeed(20)
+    globalTimer.startCounter()
+    time.sleep(2)
+    print( globalTimer.relTime, globalTimer.absTime, globalTimer.absTimePretty  )
+    terminate()
+    
