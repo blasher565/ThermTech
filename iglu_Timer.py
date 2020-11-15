@@ -24,7 +24,8 @@ class iglu_Timer (threading.Thread):
         self._countSpeed = 1
         self._observers = []
         self._stopevent  = threading.Event()
-        self._time = dt.datetime.now()
+        self._startTime = dt.datetime.now()
+        self._currentTime = dt.datetime.now()
        
     def run(self):
         while not( self._stopevent.isSet() ):
@@ -87,9 +88,8 @@ class iglu_Timer (threading.Thread):
     def updateAbsTime( self ):
         hours, mins = divmod(self._counter, 60)
         days, hours = divmod(hours, 24)
-        print( days, hours, mins )
-        self._time = self._time + dt.timedelta(days=days, hours=hours, minutes=mins)
-        return self._time
+        self._currentTime = self._startTime + dt.timedelta(days=days, hours=hours, minutes=mins)
+        return self._currentTime
         
     @property
     def absTime(self):

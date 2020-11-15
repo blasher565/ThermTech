@@ -56,7 +56,7 @@ class device:
         return self.__connected
 
     # Sets the new zoneID
-    @zoneID.setter
+    @connected.setter
     def connected( self, con ):
         self.__connected = con
 

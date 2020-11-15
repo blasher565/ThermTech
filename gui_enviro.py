@@ -20,7 +20,6 @@ class ScrollableFrame(Frame):
     def __init__(self, container, *args, **kwargs):
         super().__init__(container, *args, **kwargs)
         canvas = Canvas(self, kwargs, highlightthickness=0, bd=0)
-        
         scrollbarV = ttk.Scrollbar(self, orient="vertical", command=canvas.yview)
         scrollbarH = ttk.Scrollbar(self, orient="horizontal", command=canvas.xview)
         self.scrollable_frame = Frame(canvas)
@@ -39,7 +38,8 @@ class ScrollableFrame(Frame):
         scrollbarV.pack(side="right", fill="y")
         scrollbarH.pack(side="bottom", fill="x")
         canvas.pack(side="left", fill="both", expand=True)
-       
+
+
 
 
 def drawEnv( parent ):
@@ -52,7 +52,8 @@ def drawEnv( parent ):
     #topFrame.grid(row=0, column=0, sticky=E+W+S+N)
     topFrame.pack(side=TOP, fill=X, expand=False, anchor=N)
     
-    bottomFrame = ScrollableFrame(parent, bg=parent["background"])
+    #bottomFrame = Frame(parent, bg=parent["background"])
+    bottomFrame = Frame(parent, bg=parent["background"])
     bottomFrame.pack(side=BOTTOM, fill=BOTH, expand=True, anchor=NW)
     #bottomFrame.grid(row=1, column=0, sticky=W+E+N+S)
     
@@ -85,11 +86,10 @@ def drawEnv( parent ):
     #damperBox.grid(row=1, column=2)
     
     sensorNum = IntVar()
-    sensorBox = ttk.Spinbox(addFrame, from_=0, to=4, width=5, textvariable=sensorNum, state='readonly', validate="all")
+    sensorBox = ttk.Spinbox(addFrame, from_=0, to=3, width=5, textvariable=sensorNum, state='readonly', validate="all")
     sensorNum.set(1)
     #sensorBox.grid(row=1, column=1)
-    
-    addBut = Button( addFrame, text = "ADD", command=lambda: addZone(bottomFrame.scrollable_frame, 0, sensorNum.get(), damperNum.get() ))
+    addBut = Button( addFrame, text = "ADD", command=lambda: addZone(bottomFrame, 0, sensorNum.get(), damperNum.get() ))
     #addBut.grid(row=0, column=0, columnspan=1, rowspan=2, sticky=N+S+E+W, ipadx=20)   
     
     sensorLabel.pack(side=LEFT)
@@ -97,6 +97,9 @@ def drawEnv( parent ):
     damperLabel.pack(side=LEFT)
     damperBox.pack(side=LEFT)
     addBut.pack(side=LEFT, ipadx=5, padx=2)
+    
+    global numZones
+    numZones = 0
     
 
     #
@@ -139,7 +142,7 @@ def drawEnv( parent ):
     #rs_test.grid(row=0, column=3, padx=2, pady=2)
     #speedSelect.grid(row=0, column=0, padx=2, pady=2)
     speedSelect.pack( side=LEFT )
-    timeCanvas.pack( side=LEFT, expand=True )
+    timeCanvas.pack( side=LEFT)
     st_test.pack( side=LEFT )
     ps_test.pack( side=LEFT )
     rs_test.pack( side=LEFT )
@@ -194,46 +197,95 @@ def addDamper( parentFrame ):
     node = DA.damper("DEV1", 0)
     labelText = node.deviceType + "(" + str( node.uniqueID ) + ")"
     dampText = Label(dampFrame, text=labelText, font=("Arial 8 bold underline"), bg=parentFrame["background"] )
-    dampText.grid( row=0, column=0, columnspan=2, sticky=E+W)   
+    #dampText.grid( row=0, column=0, columnspan=2, sticky=E+W)   
+    dampText.pack( side=TOP, fill=X, anchor=CENTER )
     
-    lblText = Label(dampFrame, text="Flow Rate: ", font=("Arial 8"), bg=parentFrame["background"] )
-    lblText.grid( row=1, column=0, sticky=E)   
+    lblText = Label(dampFrame, text="Flow Rate: ", font=("Arial 8"), bg=parentFrame["background"] ).pack( side=LEFT, anchor=CENTER )
+    #lblText.grid( row=1, column=0, sticky=E)
     
-    rateText = Label(dampFrame, text=node.flowRate, font=("Arial 8"), bg=parentFrame["background"] )
-    rateText.grid( row=1, column=0, sticky=E)  
+    rateText = Label(dampFrame, text=node.flowRate, font=("Arial 8"), bg=parentFrame["background"] ).pack( side=LEFT, anchor=CENTER )
+    #rateText.grid( row=1, column=0, sticky=E)  
     
 
 
-def addZone( parentFrame, zoneID, numSensor=0, numDamper=0 ):    
-    #parentFrame.update()
-    zoneFrame = LabelFrame(parentFrame, width=parentFrame.winfo_width(), text="Zone " + str(zoneID), bg=parentFrame["background"] )
-    zoneFrame.pack( fill=X, anchor=N )
-    
-    removeBut = Button(zoneFrame, width=1, text="X", font=("Arial", 12), command = lambda: removeZone(zoneFrame) )
-    #removeBut.grid(row=0, rowspan=2, column=0, sticky=W)
-    removeBut.pack(side=LEFT, padx=5)
-    removeBut.update()
-    
-    sensframe = Frame( zoneFrame, height=zoneFrame.winfo_height()/2, width=zoneFrame.winfo_width()-removeBut.winfo_width(), bg=zoneFrame["background"] )
-    #sensframe.grid(row=0, column=1, sticky=W+E)
-    sensframe.pack(side=TOP, anchor=W)
-    dampframe = Frame( zoneFrame, height=zoneFrame.winfo_height()/2, width=zoneFrame.winfo_width()-removeBut.winfo_width(), bg=zoneFrame["background"] )
-    #dampframe.grid(row=1, column=1, sticky=W+E, pady=2)
-    dampframe.pack(side=TOP, anchor=W)
-    
-    for x in range(numSensor):
-        addSensor(sensframe)
+def addZone( parentFrame, zoneID, numSensor=0, numDamper=0 ): 
+    global numZones
+    if( numZones < 4 ):
+        if( numSensor>0 or numDamper>0 ):
+            parentFrame.update()
+            zoneFrame = LabelFrame(parentFrame, text="Zone " + str(zoneID), bg=parentFrame['background'] )
+            zoneFrame.pack( side=TOP, fill=X, anchor=W )
+            
+            removeBut = Button(zoneFrame, width=1, text="X", font=("Arial", 12), command = lambda: removeZone(zoneFrame) )
+            removeBut.pack(side=LEFT, expand=False, padx=5)
+            removeBut.update()
+            
+            devFrame = Frame(zoneFrame, bg=parentFrame['background'] )
+            devFrame.pack(side=LEFT, fill=Y, anchor=W)
         
-    for x in range(numDamper):
-        addDamper(dampframe)
+                
+            if numSensor>0:
+                sensframe = Frame( devFrame, height=zoneFrame.winfo_height()/2, width=zoneFrame.winfo_width()-removeBut.winfo_width(), bg=zoneFrame["background"] )
+                #sensframe.grid(row=0, column=1, sticky=W+E)
+                sensframe.pack(side=TOP, anchor=W)
+                for x in range(numSensor):
+                    addSensor(sensframe)
+            
+            if numDamper>0:
+                dampframe = Frame( devFrame, height=zoneFrame.winfo_height()/2, width=zoneFrame.winfo_width()-removeBut.winfo_width(), bg=zoneFrame["background"] )
+                #dampframe.grid(row=1, column=1, sticky=W+E, pady=2)
+                dampframe.pack(side=TOP, anchor=W)
+                for x in range(numDamper):
+                    addDamper(dampframe)
+            
+            tempCtrlFrame = LabelFrame(zoneFrame, text="Current Temp:", bg=zoneFrame['background'], font=("Arial 8 bold underline"))
+            tempCtrlFrame.pack(side=RIGHT, fill=Y, expand=False, ipadx=10)
+            addTempControl(tempCtrlFrame)
+            
+            numZones=numZones+1
+    else:
+        #place error block
+        pass
         
+        
+    
+def addTempControl( parentFrame ):
+    #currentTempLabel0= Label( parentFrame, text="Current Temp:", font=("Arial 8 bold underline"), bg=parentFrame['background'])
+    #currentTempLabel0.pack(expand=False, anchor=CENTER, fill=X)
     parentFrame.update()
-        
+    tempFrame = Frame(parentFrame)
+    tempFrame.pack( expand=True, anchor=W, fill=X)
+    
+    currentTempLabel1= Label( tempFrame, text="", width=4,  bg="black", font=("Arial 10 bold"), fg="white")
+    updateDegree(currentTempLabel1, 0)
+    #unitTempLabel= Label( tempFrame, text=u'\N{DEGREE SIGN}F',  bg="black", font=("Arial 10 bold"), fg="white")
+    
+    upButton=Button(tempFrame, text="^", width=2, command=lambda: changeDegree(currentTempLabel1, 1))
+    downButton=Button(tempFrame, text="v", width=2, command=lambda: changeDegree(currentTempLabel1, 0) )
+
+    currentTempLabel1.pack( side=LEFT, fill=BOTH, expand=True, anchor=E)
+    #unitTempLabel.pack( side=LEFT, fill=BOTH, expand=True, anchor=W)
+    downButton.pack( side=RIGHT, fill=Y,anchor=SE)
+    upButton.pack( side=RIGHT, fill=Y,anchor=NE )
+
+
+def changeDegree( label, direction ):
+    value = int( label["text"].strip(u'\N{DEGREE SIGN} F') )
+    t = -1
+    if( direction ):
+        t = 1
+    updateDegree( label, value + t )
+
+
+def updateDegree( label, value ):
+    label["text"]="{1:0{0}d}{2}".format(2 if value >=0 else 3,int(value), u'\N{DEGREE SIGN} F' )
         
 def removeZone( parentFrame ):
+    global numZones
     #if last zone don't delete?
     parentFrame.destroy()
-    
+    numZones=numZones-1
+
 
 def emptyFunc():
     pass
