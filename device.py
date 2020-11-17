@@ -16,6 +16,9 @@ class device:
         self.__deviceType = deviceType
         self.__zoneID = -1
         self.__connected = False
+        
+        #needed for gui 
+        self.__observers = []
 
     # Returns dict() with summary of the device information
     def about( self ):
@@ -59,6 +62,14 @@ class device:
     @connected.setter
     def connected( self, con ):
         self.__connected = con
+        
+    ## needed for gui updates!
+    def bind_to( self, callback ):
+        self.__observers.append(callback)
+        
+    def updateObservers(self):
+        for c in self.__observers:
+            c()
 
 
 if __name__ == "__main__":

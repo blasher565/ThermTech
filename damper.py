@@ -14,6 +14,7 @@ Contains the implentation for a satellite Node
 from device import device
 from time import sleep
 from sensor import sensor
+import random 
 
 
 class damper( device ):
@@ -36,7 +37,11 @@ class damper( device ):
     @flowRate.setter
     def flowRate( self, rate ):
         self.__flowRate = rate;
+        self.updateObservers()        
         return rate;
+        
+    def updateSensors( self ):
+        self.flowRate = (random.randint(0,100))
  
 
 if __name__ == "__main__" :
