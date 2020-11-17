@@ -232,19 +232,19 @@ class gui_enviro:
         dampText.grid( row=0, column=0, columnspan=2, sticky=N+W+E)
         
         
-        lblText = Label(dampFrame, text="Flow Rate: ", font=("Arial 8"), bg=parentFrame["background"] )
-        lblText.grid( row=1, column=0, sticky=E)
+        lblText = Label(dampFrame, text="Flow Rate: ", font=("Arial 8"), bg=parentFrame["background"], anchor="e"  )
+        lblText.grid( row=1, column=0, sticky=W+E)
         
-        rateText = Label(dampFrame, font=("Arial 8"), bg=parentFrame["background"] )
+        rateText = Label(dampFrame, font=("Arial 8"), bg=parentFrame["background"], anchor="w" )
         self.updateDamperText( node, rateText)
-        rateText.grid( row=1, column=1, sticky=W) 
+        rateText.grid( row=1, column=1, sticky=W+E) 
         
         if instance:
             instance.bind_to( lambda: self.updateDamperText( node, rateText) )
         
     def updateDamperText( self, node, nodeInfo  ):
         updateValue = node.flowRate;
-        nodeInfo.configure(text = '{:03.2f} %'.format(updateValue) )    
+        nodeInfo.configure(text = '{:6.2f} %'.format(updateValue) )    
     
     def addZone(self, parentFrame, numSensor=0, numDamper=0 ): 
         
