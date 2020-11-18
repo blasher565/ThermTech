@@ -21,6 +21,8 @@ class iglu_hvac:
         if not fanAlwaysOn:
             self.__fanOn = (mode == "Cooling") or (mode == "Heating");
             
+        self.__observers = []
+            
             
     #print function
     def __repr__(self):
@@ -31,6 +33,21 @@ class iglu_hvac:
         out += "CFM: {:}\n".format(self.cfm)
         return out
 
+    #links callback funciton to a tag
+    def bind_to_tag(self, tag, callback ):
+        self.__observers.append( (tag,callback) )
+    
+    #Checks tag before calling callback funciton
+    def runCallback( self, tag ):
+        for entry in self.__observers:
+            if tag in entry[0]:
+                entry[1]()       
+                
+    def delete_bind_tag( self, tag ):
+        for entry in self.__observers:
+            if tag in entry[0]:
+                del entry
+
     @property
     def mode( self ):
         return self.__mode
@@ -38,6 +55,8 @@ class iglu_hvac:
     @mode.setter
     def mode( self, newMode ):
         self.__mode = newMode
+        self.runCallback( "mode")
+         
         
     @property
     def cfm( self ):
@@ -46,6 +65,7 @@ class iglu_hvac:
     @cfm.setter
     def cfm( self, newCfm ):
         self.__cfm = newCfm
+        self.runCallback( "cfm")
 
     @property
     def exteriorTemp( self ):
@@ -54,24 +74,39 @@ class iglu_hvac:
     @exteriorTemp.setter
     def exteriorTemp( self, newTemp ):
         self.__exteriorTemp = newTemp
+        self.runCallback( "exteriorTemp")
         
     @property
     def fanAlwaysOn( self ):
         return self.__fanAlwaysOn
     
     @fanAlwaysOn.setter
-    def exteriorTemp( self, newAlwaysOn ):
+    def fanAlwaysOn( self, newAlwaysOn ):
         self.__fanAlwaysOn = newAlwaysOn    
-        self.__fanOn = newAlwaysOn  
+        self.runCallback( "fanAlwaysOn")
+        
+        #Update the current Fan to be On
+        if not( self.mode == "Cooling" or self.mode == "Heating"):
+            self.fanOn = newAlwaysOn
+        
+                
+    @property
+    def fanOn( self ):
+        return self.__fanOn   
+    
+    @fanOn.setter
+    def fanOn( self, fanVal ):
+        self.__fanOn = fanVal
+        self.runCallback( "fanOn")
         
         
     def startCooling( self ):
         self.mode = "Cooling"
-        self.__fanOn = True;
+        self.fanOn = True;
         
     def startHeating( self ):
         self.mode = "Heating"
-        self.__fanOn = True;
+        self.fanOn = True;
         
     def stop(self):
         self.mode = "Standby"
@@ -79,6 +114,25 @@ class iglu_hvac:
             self.__fanOn = False
         
 if __name__ == "__main__":
+    
+    import time
+    def printWords( inputStr ):
+        print(inputStr)
+    
     hvac = iglu_hvac()
     print( hvac )
+    
+    time.sleep(2)
+    
+    hvac.bind_to_tag(("mode"), lambda: printWords("MODE CHANGE"))
+    hvac.bind_to_tag("fanOn", lambda: printWords("FAN CHANGE"))
+    hvac.bind_to_tag("exteriorTemp", lambda: printWords("EXT CHANGE"))
+    hvac.bind_to_tag("cfm", lambda: printWords("CFM CHANGE"))
+    
+    hvac.startCooling()
+    
+    
+    
+    
+    
     

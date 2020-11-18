@@ -15,37 +15,9 @@ import iglu_Timer
 import satelliteNode as SN
 import damper as DA
 
-
-# class ScrollableFrame(Frame):
-#     def __init__(self, container, *args, **kwargs):
-#         super().__init__(container, *args, **kwargs)
-#         canvas = Canvas(self, kwargs, highlightthickness=0, bd=0)
-#         scrollbarV = ttk.Scrollbar(self, orient="vertical", command=canvas.yview)
-#         scrollbarH = ttk.Scrollbar(self, orient="horizontal", command=canvas.xview)
-#         self.scrollable_frame = Frame(canvas)
-
-#         self.scrollable_frame.bind(
-#             "<Configure>",
-#             lambda e: canvas.configure(
-#                 scrollregion=canvas.bbox("all")
-#             )
-#         )
-
-#         canvas.create_window((0, 0), window=self.scrollable_frame, anchor="nw")
-
-#         canvas.configure(yscrollcommand=scrollbarV.set, xscrollcommand=scrollbarH.set)
-        
-#         scrollbarV.pack(side="right", fill="y")
-#         scrollbarH.pack(side="bottom", fill="x")
-#         canvas.pack(side="left", fill="both", expand=True)
-
-
 class gui_enviro:
     def __init__(self):
         self.numZones = 0
-        
-        
-        
         
         #These always return ref to the thing itself
         self.addZoneCallback = None;     #return new zone
@@ -165,7 +137,7 @@ class gui_enviro:
     def addSensor(self, parentFrame, instance ):
         parentFrame.update()
         #make generic container to hold sensor Info
-        sensFrame = Frame(parentFrame, bg=parentFrame["background"], highlightthickness=2, highlightbackground="black", width=140, height=110 )
+        sensFrame = Frame(parentFrame, bg=parentFrame["background"], highlightthickness=2, highlightbackground="black", width=140, height=105 )
         sensFrame.pack(side=LEFT)
         sensFrame.pack_propagate(False)
         sensFrame.grid_propagate(False)
@@ -217,7 +189,7 @@ class gui_enviro:
     def addDamper(self, parentFrame, instance ):
         parentFrame.update()
         #make generic container to hold sensor Info
-        dampFrame = Frame(parentFrame, bg=parentFrame["background"], highlightthickness=2, highlightbackground="black",  width=120, height=50)
+        dampFrame = Frame(parentFrame, bg=parentFrame["background"], highlightthickness=2, highlightbackground="black",  width=120, height=45)
         dampFrame.pack(side=LEFT)
         dampFrame.pack_propagate(False)
         dampFrame.grid_propagate(False)
@@ -252,10 +224,14 @@ class gui_enviro:
             #Call the simulation add function
             # And allow it to limit the number of devices
             zone = self.addZoneCallback( numSensor=numSensor, numDamper=numDamper )
-            zoneName = zone.name
+            if zone:
+                zoneName = zone.name
+            else:
+                zoneName = "Area " + str(self.numZones)
         else:
-            zone =  self.numZones < 4
+            zone =  self.numZones < 4          
             zoneName = "Area " + str(self.numZones)
+            
             
         if( zone ):
             if( numSensor>0 or numDamper>0 ):

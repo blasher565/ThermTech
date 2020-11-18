@@ -25,19 +25,19 @@ import os
 
 class gui_main():
     def __init__(self ):
-
-    
-        #setup the initial Window
         self.root = Tk()
         self.gui_env = gui_enviro()
         self.gui_hub = gui_hub()  
-        
+        self.gui_hvac = gui_hvac()
+
+    def draw(self):
         
         self.root.title('ThermTech Interior Climate Solution')
         self.root.grid_columnconfigure(0, weight=1, uniform="group1")
         self.root.grid_columnconfigure(1, weight=1, uniform="group1")
         self.root.grid_rowconfigure(0, weight=1)
-        self.root.geometry('%sx%s' % (int(self.root.winfo_screenwidth() *.8), int(self.root.winfo_screenheight()*.8)))
+        self.root.geometry("1200x800") # fix window size for ease of placing things
+        #self.root.geometry( '%sx%s' % (int(self.root.winfo_screenwidth() *.8), int(self.root.winfo_screenheight()*.8))) 
         self.root.resizable(False,False)
         self.root.update()
         
@@ -73,7 +73,7 @@ class gui_main():
         self.gui_hub.drawHub(self.hub_frame)
         
         self.hvac_frame.update()
-        drawHVAC(self.hvac_frame)
+        self.gui_hvac.drawHVAC(self.hvac_frame)
         
         self.zone_frame.update()
         self.gui_env.drawEnv( self.zone_frame )
