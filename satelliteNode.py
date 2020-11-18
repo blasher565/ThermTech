@@ -57,9 +57,9 @@ class satelliteNode( device ):
         out = {}
         for k1, v1 in self.sensors.items():
             if( len(v1["history"]) > 0 ):
-                out[ v1["sensor"]  ] = ( v1["history"][-1], v1["formatText"])
+                out[ str(v1["sensor"]) ] = ( v1["history"][-1], v1["formatText"])
             else:
-                out[ v1["sensor"]  ] = ( None, v1["formatText"])
+                out[ str(v1["sensor"])  ] = ( None, v1["formatText"])
         return out
 
 
