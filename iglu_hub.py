@@ -28,6 +28,8 @@ class iglu_hub:
         
         self.hvac = None
         
+        self.addArea(name="Iglu Home", numSensor=1)
+        
     #links callback funciton to a tag
     def bind_to_tag(self, tag, callback ):
         self.__observers.append( (tag,callback) )
@@ -119,10 +121,10 @@ class iglu_hub:
     
     def delArea(self, a):
         if a in self.areaList:
-            self.areaList.remove(a)
-
-            self.runCallback("delArea")
-            return True
+            if len(self.areaList) > 1:
+                self.areaList.remove(a)
+                self.runCallback("delArea")
+                return True
         else:
             return False
     

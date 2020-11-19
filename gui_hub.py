@@ -308,7 +308,7 @@ class gui_hub:
         self.hub.bind_to_tag( ("hub_gui", "secondaryArea") , lambda: canvas.itemconfigure(area2Humd, text=getArea2Hum() ))
         if( self.hub.getSecondaryArea() ):
             self.hub.getSecondaryArea().bind_to_tag( ("hub_gui", "name" ), lambda: canvas.itemconfigure(areas2Name, text=getArea2Name() ) )
-            self.hub.getSecondaryArea().bind_to_tag( ("hub_gui", "currentHumidity" ), lambda: canvas.itemconfigure(area2Temp, text=getArea2Temp() ) )
+            self.hub.getSecondaryArea().bind_to_tag( ("hub_gui", "currentTempature" ), lambda: canvas.itemconfigure(area2Temp, text=getArea2Temp() ) )
             self.hub.getSecondaryArea().bind_to_tag( ("hub_gui", "currentHumidity" ), lambda: canvas.itemconfigure(area2Humd, text=getArea2Hum() ) )
         
         
@@ -326,7 +326,7 @@ class gui_hub:
         self.hub.bind_to_tag( ("hub_gui", "tertiaryArea") , lambda: canvas.itemconfigure(area3Humd, text=getArea3Hum() ))
         if( self.hub.getTertiaryArea() ):
             self.hub.getTertiaryArea().bind_to_tag( ("hub_gui", "name" ), lambda: canvas.itemconfigure(area3Name, text=getArea3Name() ) )
-            self.hub.getTertiaryArea().bind_to_tag( ("hub_gui", "currentHumidity" ), lambda: canvas.itemconfigure(area3Temp, text=getArea3Temp() ) )
+            self.hub.getTertiaryArea().bind_to_tag( ("hub_gui", "currentTempature" ), lambda: canvas.itemconfigure(area3Temp, text=getArea3Temp() ) )
             self.hub.getTertiaryArea().bind_to_tag( ("hub_gui", "currentHumidity" ), lambda: canvas.itemconfigure(area3Humd, text=getArea3Hum() ) )
         
     

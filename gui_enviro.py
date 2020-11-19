@@ -11,6 +11,7 @@ from tkinter import ttk
 from PIL import Image, ImageTk
 import time
 import iglu_Timer
+import iglu_hub
     
 import satelliteNode as SN
 import damper as DA
@@ -20,10 +21,10 @@ class gui_enviro:
         self.numZones = 0
         
         #These always return ref to the thing itself
-        self.addZoneCallback = None;     #return new zone
-        self.removeZoneCallback = None;  #
         self.addSenorCallback = None;    #return new Sensor
         self.addDamperCallback = None;           #return new Damper
+        
+        self.hub = None
                 
     
     def drawEnv(self, parent ):
@@ -123,6 +124,12 @@ class gui_enviro:
         #bind the timer text change to, the counter value changing
         iglu_Timer.globalTimer.bind_to(self.updateTime)
         
+        
+        if self.hub:
+            for a in self.hub.areaList:
+                self.addZone(bottomFrame, 1, 0, a, static=True)
+            
+        
     #
     # Update the time value displayed
     #    
@@ -218,19 +225,23 @@ class gui_enviro:
         updateValue = node.flowRate;
         nodeInfo.configure(text = '{:6.2f} %'.format(updateValue) )    
     
-    def addZone(self, parentFrame, numSensor=0, numDamper=0 ): 
-        
-        if( self.addZoneCallback ):
-            #Call the simulation add function
-            # And allow it to limit the number of devices
-            zone = self.addZoneCallback( numSensor=numSensor, numDamper=numDamper )
-            if zone:
-                zoneName = zone.name
+    def addZone(self, parentFrame, numSensor=0, numDamper=0, exisitingArea=None, static=False ): 
+        parentFrame.update()
+        if not( exisitingArea ):
+            if( self.hub ):
+                #Call the simulation add function
+                # And allow it to limit the number of devices
+                zone = self.hub.addArea( numSensor=numSensor, numDamper=numDamper )
+                if zone:
+                    zoneName = zone.name
+                else:
+                    zoneName = "Area " + str(self.numZones) #if fail to add
             else:
+                zone =  self.numZones < 4          
                 zoneName = "Area " + str(self.numZones)
         else:
-            zone =  self.numZones < 4          
-            zoneName = "Area " + str(self.numZones)
+            zone = exisitingArea
+            zoneName = zone.name
             
             
         if( zone ):
@@ -238,15 +249,18 @@ class gui_enviro:
                 parentFrame.update()
                 zoneFrame = LabelFrame(parentFrame, text=zoneName, bg=parentFrame['background'] )
                 zoneFrame.pack( side=TOP, fill=X, anchor=W )
+                zoneFrame.columnconfigure(1, weight=1)
                 
-                removeBut = Button(zoneFrame, width=1, text="X", font=("Arial", 12), command = lambda: self.removeZone(zoneFrame, zone) )
-                removeBut.pack(side=LEFT, expand=False, padx=5)
+                removeBut = Button(zoneFrame, width=1, text="X", font=("Arial", 12), command = lambda: (not static) and self.removeZone(zoneFrame, zone)  )
+                #removeBut.pack(side=LEFT, expand=False, padx=5)
+                removeBut.grid( column= 0, row=0, padx=5)
                 removeBut.update()
                 
                 devFrame = Frame(zoneFrame, bg=parentFrame['background'] )
-                devFrame.pack(side=LEFT, fill=Y, anchor=W)
+                #devFrame.pack(side=LEFT, fill=Y, anchor=W)
+                devFrame.grid( column= 1, row=0, sticky=W)
             
-                if( self.addZoneCallback):
+                if( self.hub ):
                     sensframe = Frame( devFrame, height=zoneFrame.winfo_height()/2, width=zoneFrame.winfo_width()-removeBut.winfo_width(), bg=zoneFrame["background"] )
                     sensframe.pack(side=TOP, anchor=W)
                     dampframe = Frame( devFrame, height=zoneFrame.winfo_height()/2, width=zoneFrame.winfo_width()-removeBut.winfo_width(), bg=zoneFrame["background"] )
@@ -274,11 +288,13 @@ class gui_enviro:
                         dampframe.pack(side=TOP, anchor=W)
                         for x in range(numDamper):
                             self.addDamper(dampframe, None)
-                    
-                tempCtrlFrame = LabelFrame(zoneFrame, text="Current Temp:", bg=zoneFrame['background'], font=("Arial 8 bold underline"))
-                tempCtrlFrame.pack(side=RIGHT, fill=Y, expand=False, ipadx=10)
-                self.addTempControl(tempCtrlFrame)
-                
+                            
+                #add to all
+                tempCtrlFrame = LabelFrame(zoneFrame, text="Controls", font=("Arial 8 bold underline"))
+                #tempCtrlFrame.pack(side=RIGHT, fill=Y, expand=False, ipadx=10)
+                tempCtrlFrame.grid( column= 2, row=0, sticky=E+N+S)
+                self.addTempControl(tempCtrlFrame, zone)
+            
                 self.numZones=self.numZones+1
         else:
             #place error block
@@ -286,40 +302,90 @@ class gui_enviro:
             
             
         
-    def addTempControl(self, parentFrame ):
+    def addTempControl(self, parentFrame, zone ):
         #currentTempLabel0= Label( parentFrame, text="Current Temp:", font=("Arial 8 bold underline"), bg=parentFrame['background'])
         #currentTempLabel0.pack(expand=False, anchor=CENTER, fill=X)
+
+        def incCurrentTemp(zone):
+            zone.currentTempature = zone.currentTempature + 1
+            
+        def decCurrentTemp(zone):
+            zone.currentTempature = zone.currentTempature - 1
+            
+        def incTargetTemp(zone):
+            zone.targetTempature = zone.targetTempature + 1
+            
+        def decTargetTemp(zone):
+            zone.targetTempature = zone.targetTempature - 1
+            
+        def setHvacRate(zone, rate):
+            pass            
+            #zone.targetTempature = zone.targetTempature - 1
+            
+        def setTempRate(zone, rate):
+            pass
+        
         parentFrame.update()
-        tempFrame = Frame(parentFrame)
-        tempFrame.pack( expand=True, anchor=W, fill=X)
+
+        parentFrame.columnconfigure(1, weight=1)
+        parentFrame.rowconfigure(0, weight=1)
+        parentFrame.rowconfigure(1, weight=1)        
+        parentFrame.rowconfigure(2, weight=1)
+        parentFrame.rowconfigure(4, weight=1)
+
+        currentTempLabel = Label( parentFrame, text="C:", width=2,  bg=parentFrame["background"], font=("Arial 10 bold"), fg="black")
+        targetTempLabel = Label( parentFrame, text="T:", width=2,  bg=parentFrame["background"], font=("Arial 10 bold"), fg="black")
+        rateLabel = Label( parentFrame, text="RT:", width=2,  bg=parentFrame["background"], font=("Arial 10 bold"), fg="black" )
+        rateLabel1 = Label( parentFrame, text="RH:", width=2,  bg=parentFrame["background"], font=("Arial 10 bold"), fg="black" )
         
-        currentTempLabel1= Label( tempFrame, text="", width=4,  bg="black", font=("Arial 10 bold"), fg="white")
-        self.updateDegree(currentTempLabel1, 0)
-        #unitTempLabel= Label( tempFrame, text=u'\N{DEGREE SIGN}F',  bg="black", font=("Arial 10 bold"), fg="white")
+        currentTempLabel1= Label( parentFrame, text="", width=4,  bg="black", font=("Arial 10 bold"), fg="white")
+        currentTempLabel2= Label( parentFrame, text="", width=4,  bg="black", font=("Arial 10 bold"), fg="white")
+        tempRate = DoubleVar()
+        hvacRate = DoubleVar()
+        currentTempLabel3 = Scale( parentFrame, orient=HORIZONTAL, variable = tempRate, tickinterval=.01, from_=-.5, to=.5, resolution=.05, command=lambda r: setTempRate(zone, r) )
+        currentTempLabel4 = Scale( parentFrame, orient=HORIZONTAL, variable = hvacRate, tickinterval=.01, from_=-.5, to=.5, resolution=.05, command=lambda r: setHvacRate(zone, r) )
         
-        upButton=Button(tempFrame, text="^", width=2, command=lambda: self.changeDegree(currentTempLabel1, 1))
-        downButton=Button(tempFrame, text="v", width=2, command=lambda: self.changeDegree(currentTempLabel1, 0) )
+        
+        self.updateDegree(currentTempLabel1, zone.currentTempature if self.hub else 70 )
+        self.updateDegree(currentTempLabel2, zone.targetTempature if self.hub else 70 )
+
+            
+        upButtonC=Button(parentFrame, text="^", width=2, command=lambda: self.hub and incCurrentTemp(zone) )
+        downButtonC=Button(parentFrame, text="v", width=2, command=lambda: self.hub and decCurrentTemp(zone) )
+        
+        upButtonT=Button(parentFrame, text="^", width=2, command=lambda: self.hub and incTargetTemp(zone) )
+        downButtonT=Button(parentFrame, text="v", width=2, command=lambda: self.hub and decTargetTemp(zone) )
     
-        currentTempLabel1.pack( side=LEFT, fill=BOTH, expand=True, anchor=E)
+        if( self.hub ):
+            zone.bind_to_tag( ("hub_gui", "currentTempature" ), lambda: self.updateDegree(currentTempLabel1, zone.currentTempature) )
+            zone.bind_to_tag( ("hub_gui", "targetTempature" ), lambda: self.updateDegree(currentTempLabel2, zone.targetTempature) )
+    
+        currentTempLabel.grid(row=0, column=0)
+        currentTempLabel1.grid(row=0, column=1)
         #unitTempLabel.pack( side=LEFT, fill=BOTH, expand=True, anchor=W)
-        downButton.pack( side=RIGHT, fill=Y,anchor=SE)
-        upButton.pack( side=RIGHT, fill=Y,anchor=NE )
+        downButtonC.grid(row=0, column=2)
+        upButtonC.grid(row=0, column=3)
+        
+        targetTempLabel.grid(row=1, column=0)
+        currentTempLabel2.grid(row=1, column=1)
+        #unitTempLabel.pack( side=LEFT, fill=BOTH, expand=True, anchor=W)
+        downButtonT.grid(row=1, column=2)
+        upButtonT.grid(row=1, column=3)
+        
+        rateLabel.grid(row=2, column=0)
+        currentTempLabel3.grid(row=2, column=1, columnspan=3)
+        
+        rateLabel1.grid(row=3, column=0)
+        currentTempLabel4.grid(row=3, column=1, columnspan=3)
     
-    
-    def changeDegree(self, label, direction ):
-        value = int( label["text"].strip(u'\N{DEGREE SIGN} F') )
-        t = -1
-        if( direction ):
-            t = 1
-        self.updateDegree( label, value + t )
     
     
     def updateDegree(self, label, value ):
         label["text"]="{1:0{0}d}{2}".format(2 if value >=0 else 3,int(value), u'\N{DEGREE SIGN} F' )
             
     def removeZone(self, parentFrame, zone ):
-        if( self.removeZoneCallback ):
-            check = self.removeZoneCallback( zone );
+        if( self.hub ):
+            check = self.hub.delArea( zone );
         else:
             check = (self.numZones > 0)
             

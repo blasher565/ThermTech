@@ -33,11 +33,6 @@ class iglu_simulation:
         #define GUI and setup callback functions to update HUB
         self.gui = gui_main.gui_main()
         
-        #Enviromental Callbacks
-        self.gui.gui_env.addZoneCallback = self.hub.addArea    #Now when the area button is hit, it will also add an area here
-        self.gui.gui_env.removeZoneCallback = self.hub.delArea #Now when the area button is hit, it will also remove an area here
-        
-        
         #Hub
         self.gui.gui_hub.hub = self.hub
         
@@ -45,6 +40,8 @@ class iglu_simulation:
         self.hub.hvac = self.hvac
         self.gui.gui_hvac.hvac = self.hvac 
         self.gui.gui_hvac.updateAll()
+        
+        self.gui.gui_env.hub = self.hub
         #bind update functions!
         
         #map add area button to simulation addArea
