@@ -18,12 +18,7 @@ import damper as DA
 
 class gui_enviro:
     def __init__(self):
-        self.numZones = 0
-        
-        #These always return ref to the thing itself
-        self.addSenorCallback = None;    #return new Sensor
-        self.addDamperCallback = None;           #return new Damper
-        
+        self.numZones = 0        
         self.hub = None
                 
     
@@ -143,11 +138,6 @@ class gui_enviro:
     #  This needs to be setup as a global or class
     def addSensor(self, parentFrame, instance ):
         parentFrame.update()
-        #make generic container to hold sensor Info
-        sensFrame = Frame(parentFrame, bg=parentFrame["background"], highlightthickness=2, highlightbackground="black", width=140, height=105 )
-        sensFrame.pack(side=LEFT)
-        sensFrame.pack_propagate(False)
-        sensFrame.grid_propagate(False)
         
         #for testing make own else in simulation use defined
         if not instance:
@@ -156,15 +146,24 @@ class gui_enviro:
             node = instance
             
         updateValue = node.getLastUpdate();
+        
+        #make generic container to hold sensor Info
         labelText = node.deviceType + "(" + str( node.uniqueID ) + ")"
-        sensText = Label(sensFrame, text=labelText, font=("Arial 8 bold underline"), bg=parentFrame["background"] )
-        sensText.grid( row=0, column=0, columnspan=2, sticky=E+W)
+        sensFrame = LabelFrame(parentFrame, bg=parentFrame["background"], text=labelText, highlightthickness=0, highlightbackground="black", font=("Arial 8 bold underline"), borderwidth=2, width=140, height=110 )
+        sensFrame.pack(side=LEFT)
+        sensFrame.pack_propagate(False)
+        sensFrame.grid_propagate(False)
+        sensFrame.columnconfigure(0, weight = 0)
+        sensFrame.columnconfigure(1, weight = 1)
 
+        #labelText = node.deviceType + "(" + str( node.uniqueID ) + ")"
+        #sensText = Label(sensFrame, text=labelText, font=("Arial 8 bold underline"), bg=parentFrame["background"] )
+        #sensText.grid( row=0, column=0, columnspan=2, sticky=E+W)
 
         nodeInfo = {}               
         for rowCnt, k in enumerate(updateValue):           
             
-            sensText = Label(sensFrame, text=str(k) + ": ", font=("Arial 8"), bg=parentFrame["background"] ).grid( row=rowCnt+1, column= 0, sticky=E )
+            sensText = Label(sensFrame, text=str(k) + ": ", font=("Arial 10"), bg=parentFrame["background"] ).grid( row=rowCnt+1, column= 0, sticky=E )
             valText = Label(sensFrame, font=("Arial 8"), bg=parentFrame["background"] )
             valText.grid( row=rowCnt+1, column= 1, sticky=W )
                         
@@ -195,11 +194,6 @@ class gui_enviro:
     
     def addDamper(self, parentFrame, instance ):
         parentFrame.update()
-        #make generic container to hold sensor Info
-        dampFrame = Frame(parentFrame, bg=parentFrame["background"], highlightthickness=2, highlightbackground="black",  width=120, height=45)
-        dampFrame.pack(side=LEFT)
-        dampFrame.pack_propagate(False)
-        dampFrame.grid_propagate(False)
         
         if not instance:
             node = DA.damper("DEV1", 0)
@@ -207,16 +201,27 @@ class gui_enviro:
             node = instance
         
         labelText = node.deviceType + "(" + str( node.uniqueID ) + ")"
-        dampText = Label(dampFrame, text=labelText, font=("Arial 8 bold underline"), bg=parentFrame["background"] )
-        dampText.grid( row=0, column=0, columnspan=2, sticky=N+W+E)
+        
+        #make generic container to hold sensor Info
+        dampFrame = LabelFrame(parentFrame, bg=parentFrame["background"], text=labelText, highlightthickness=0, highlightbackground="black", font=("Arial 8 bold underline"), borderwidth=2, width=120, height=45 )
+        dampFrame.pack(side=LEFT)
+        dampFrame.pack_propagate(False)
+        dampFrame.grid_propagate(False)
+        dampFrame.columnconfigure(0, weight = 0)
+        dampFrame.columnconfigure(1, weight = 1)
+
+        
+
+        #dampText = Label(dampFrame, text=labelText, font=("Arial 8 bold underline"), bg=parentFrame["background"] )
+        #dampText.grid( row=0, column=0, columnspan=2, sticky=N+W+E)
         
         
         lblText = Label(dampFrame, text="Flow Rate: ", font=("Arial 8"), bg=parentFrame["background"], anchor="e"  )
-        lblText.grid( row=1, column=0, sticky=W+E)
+        lblText.grid( row=0, column=0, sticky=W+E)
         
         rateText = Label(dampFrame, font=("Arial 8"), bg=parentFrame["background"], anchor="w" )
         self.updateDamperText( node, rateText)
-        rateText.grid( row=1, column=1, sticky=W+E) 
+        rateText.grid( row=0, column=1, sticky=W+E) 
         
         if instance:
             instance.bind_to( lambda: self.updateDamperText( node, rateText) )
@@ -307,10 +312,10 @@ class gui_enviro:
         #currentTempLabel0.pack(expand=False, anchor=CENTER, fill=X)
 
         def incCurrentTemp(zone):
-            zone.currentTempature = zone.currentTempature + 1
+            zone.currentTempatureActual = zone.currentTempatureActual + 1
             
         def decCurrentTemp(zone):
-            zone.currentTempature = zone.currentTempature - 1
+            zone.currentTempatureActual = zone.currentTempatureActual - 1
             
         def incTargetTemp(zone):
             zone.targetTempature = zone.targetTempature + 1
@@ -319,11 +324,10 @@ class gui_enviro:
             zone.targetTempature = zone.targetTempature - 1
             
         def setHvacRate(zone, rate):
-            pass            
-            #zone.targetTempature = zone.targetTempature - 1
+            zone.hvacTempatureChangeRate = float(rate)
             
         def setTempRate(zone, rate):
-            pass
+            zone.externalTempatureChangeRate = float(rate)
         
         parentFrame.update()
 
@@ -335,19 +339,24 @@ class gui_enviro:
 
         currentTempLabel = Label( parentFrame, text="C:", width=2,  bg=parentFrame["background"], font=("Arial 10 bold"), fg="black")
         targetTempLabel = Label( parentFrame, text="T:", width=2,  bg=parentFrame["background"], font=("Arial 10 bold"), fg="black")
-        rateLabel = Label( parentFrame, text="RT:", width=2,  bg=parentFrame["background"], font=("Arial 10 bold"), fg="black" )
+        rateLabel = Label( parentFrame, text="RX:", width=2,  bg=parentFrame["background"], font=("Arial 10 bold"), fg="black" )
         rateLabel1 = Label( parentFrame, text="RH:", width=2,  bg=parentFrame["background"], font=("Arial 10 bold"), fg="black" )
         
         currentTempLabel1= Label( parentFrame, text="", width=4,  bg="black", font=("Arial 10 bold"), fg="white")
         currentTempLabel2= Label( parentFrame, text="", width=4,  bg="black", font=("Arial 10 bold"), fg="white")
         tempRate = DoubleVar()
         hvacRate = DoubleVar()
-        currentTempLabel3 = Scale( parentFrame, orient=HORIZONTAL, variable = tempRate, tickinterval=.01, from_=-.5, to=.5, resolution=.05, command=lambda r: setTempRate(zone, r) )
-        currentTempLabel4 = Scale( parentFrame, orient=HORIZONTAL, variable = hvacRate, tickinterval=.01, from_=-.5, to=.5, resolution=.05, command=lambda r: setHvacRate(zone, r) )
+        currentTempLabel3 = Scale( parentFrame, orient=HORIZONTAL, variable = tempRate, tickinterval=.01, from_=0, to=.5, resolution=.05, command=lambda r: setTempRate(zone, r) )
+        currentTempLabel4 = Scale( parentFrame, orient=HORIZONTAL, variable = hvacRate, tickinterval=.01, from_=0, to=.5, resolution=.05, command=lambda r: setHvacRate(zone, r) )
         
+        #set initial values
+        if( self.hub ):
+            tempRate.set(zone.externalTempatureChangeRate)
+            hvacRate.set(zone.hvacTempatureChangeRate)
+
         
-        self.updateDegree(currentTempLabel1, zone.currentTempature if self.hub else 70 )
-        self.updateDegree(currentTempLabel2, zone.targetTempature if self.hub else 70 )
+        self.updateDegree(currentTempLabel1, round(zone.currentTempatureActual) if self.hub else 70 )
+        self.updateDegree(currentTempLabel2, round(zone.targetTempature) if self.hub else 70 )
 
             
         upButtonC=Button(parentFrame, text="^", width=2, command=lambda: self.hub and incCurrentTemp(zone) )
@@ -357,26 +366,28 @@ class gui_enviro:
         downButtonT=Button(parentFrame, text="v", width=2, command=lambda: self.hub and decTargetTemp(zone) )
     
         if( self.hub ):
-            zone.bind_to_tag( ("hub_gui", "currentTempature" ), lambda: self.updateDegree(currentTempLabel1, zone.currentTempature) )
+            zone.bind_to_tag( ("hub_gui", "currentTempatureActual" ), lambda: self.updateDegree(currentTempLabel1, zone.currentTempatureActual) )
             zone.bind_to_tag( ("hub_gui", "targetTempature" ), lambda: self.updateDegree(currentTempLabel2, zone.targetTempature) )
+            zone.bind_to_tag( ("hub_gui", "externalTempatureChangeRate" ), lambda: tempRate.set(zone.externalTempatureChangeRate) )
+            zone.bind_to_tag( ("hub_gui", "hvacTempatureChangeRate" ), lambda: hvacRate.set(zone.hvacTempatureChangeRate) )
     
         currentTempLabel.grid(row=0, column=0)
         currentTempLabel1.grid(row=0, column=1)
         #unitTempLabel.pack( side=LEFT, fill=BOTH, expand=True, anchor=W)
-        downButtonC.grid(row=0, column=2)
-        upButtonC.grid(row=0, column=3)
+        downButtonC.grid(row=0, column=3)
+        upButtonC.grid(row=0, column=2)
         
         targetTempLabel.grid(row=1, column=0)
         currentTempLabel2.grid(row=1, column=1)
         #unitTempLabel.pack( side=LEFT, fill=BOTH, expand=True, anchor=W)
-        downButtonT.grid(row=1, column=2)
-        upButtonT.grid(row=1, column=3)
+        downButtonT.grid(row=1, column=3)
+        upButtonT.grid(row=1, column=2)
         
-        rateLabel.grid(row=2, column=0)
-        currentTempLabel3.grid(row=2, column=1, columnspan=3)
+        rateLabel.grid(row=3, column=0)
+        currentTempLabel3.grid(row=3, column=1, columnspan=3)
         
-        rateLabel1.grid(row=3, column=0)
-        currentTempLabel4.grid(row=3, column=1, columnspan=3)
+        rateLabel1.grid(row=2, column=0)
+        currentTempLabel4.grid(row=2, column=1, columnspan=3)
     
     
     

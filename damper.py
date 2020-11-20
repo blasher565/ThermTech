@@ -41,7 +41,7 @@ class damper( device ):
         return rate;
         
     def updateSensors( self ):
-        self.flowRate = (random.randint(0,100))
+        pass
  
 
 if __name__ == "__main__" :

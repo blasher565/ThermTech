@@ -41,6 +41,18 @@ class iglu_area:
         
         self.__rank = None
         
+        #Simulation properties
+        self.__currentTempatureActual = 70
+        self.__currentHumidityActual = 45  
+        self.__currentCOActual = 45 
+        self.__currentActivityActual = 0
+        
+        self.__extRateChange =  0  # Abs Rate of change of the currentTempature due to exterior Temp
+        self.__hvacRateChange = 0  # Abs rate of change of the currentTempature doue HVAC ( will adjust sign based on Mode)
+        
+        self.extRateSign =  0  # If hotter outside: "+1", if colder outside: "-1"
+        self.hvacMode = 0  # If heating: "+1", if cooling outside: "-1", if standby: 0
+    
         
     #links callback funciton to a tag
     def bind_to_tag(self, tag, callback ):
@@ -84,43 +96,42 @@ class iglu_area:
         self.__rank = newRank
         self.runCallback( "rank")
         
-    def updateStats(self):
-        cnt = 0
-        tempValue = 0
-        humidityValue = 0
-        active = 0;
-        ppmValue = 0;
-        for d in self.deviceList:
-            if isinstance( d, SN.satelliteNode ):
-                u = d.getLastUpdate()
-                
-                #if a valid element
-                if( u["Thermometer"][0] ):
+    def updateStats(self, timestamp):
+        if not( timestamp == self.__lastTimeStamp ):  
+            sensorData = [0]*4;          
+            sensorCnt = 0;
+            self.__lastTimeStamp = timestamp
+            
+            for d in self.deviceList:
+                if isinstance( d, SN.satelliteNode ):
+                    sensorCnt = sensorCnt + 1
                     
-                    #if the timestamp is new update
-                    if not( self.__lastTimeStamp == u["Thermometer"][0][0] ):
-                        self.__lastTimeStamp = u["Thermometer"][0][0] 
+                    #
+                    #  Can't easily loop over all of them as one loop
+                    #   because they are combined differently
+                    #
+                    #Average Temp over history?
+                    iterLen = min(len( d.sensors[0]["history"] ),5 )
+                    sum = 0;
+                    for h in range(0,iterLen):
+                        sum += d.sensors[0]["history"][-1-h][1]                        
+                    sensorData[0] = sensorData[0] + (sum/iterLen if iterLen>0 else 0)           #Temp
                         
-                        tempValue = tempValue + u["Thermometer"][0][1]
-                        humidityValue = humidityValue + u["Hygrometer"][0][1]
-                        active = active or u["PersonDetector"][0][1]
-                        ppmValue = max(ppmValue, u["CarbonMonoxide"][0][1] )
-                        cnt + cnt + 1
+                    sensorData[1] = sensorData[1] and d.sensors[1]["history"][-1][1]            #Activity
+                    sensorData[2] = sensorData[2] + d.sensors[2]["history"][-1][1]              #Humiditiy
+                    sensorData[3] = max( sensorData[3], d.sensors[3]["history"][-1][1] )        #CO
+                 
+            if( sensorCnt >  0):
+                self.currentTempature = sensorData[0] / sensorCnt
+                self.currentHumidity = sensorData[2] / sensorCnt
+                self.activity = sensorData[1]
+                self.carbonMonoxide = sensorData[3]            
 
-                        self.currentTempature = tempValue / max(cnt,1)
-                        self.currentHumidity = humidityValue / max(cnt,1)
-                        self.activity = active
-                        self.carbonMonoxide = ppmValue
-                       
-                    else:
-                        break;
-                    
 
 
     #functions tomodify or change temperature
     @property
     def currentTempature(self):
-        self.updateStats()
         return self.__currentTemp
     
     @currentTempature.setter
@@ -140,12 +151,12 @@ class iglu_area:
     #functions to modify humidity levels
     @property
     def currentHumidity(self):
-        self.updateStats()
         return self.__currentHumidity
     
     @currentHumidity.setter
     def currentHumidity(self, newHumidity):
         self.__currentHumidity = newHumidity
+        #[ d.setMeanHumidity( self.currentHumidity ) for d in self.deviceList if isinstance(d, SN.satelliteNode)]
         self.runCallback("currentHumidity")
         
     #functions to modify humidity levels
@@ -161,29 +172,74 @@ class iglu_area:
     #function to modify human activity
     @property
     def activity(self):
-        self.updateStats()
         return self.__currentActivity
     
     @activity.setter
     def activity(self, newActivity):
         self.__currentActivity = newActivity
+        #[ d.setMeanActivity( self.activity ) for d in self.deviceList if isinstance(d, SN.satelliteNode)]
+        self.runCallback("activity")
         
     #function to modify CO level
     @property
     def carbonMonoxide(self):
-        self.updateStats()
         return self.__currentCO
     
     @carbonMonoxide.setter
     def carbonMonoxide(self, newCO):
         self.__currentCO = newCO
+        self.runCallback("carbonMonoxide")       
         
-        
+    @property
+    def externalTempatureChangeRate( self ):
+        return self.__extRateChange
+    
+    @externalTempatureChangeRate.setter
+    def externalTempatureChangeRate( self, newRate ):
+        self.__extRateChange = newRate
+        self.runCallback("externalTempatureChangeRate")
+    
+    @property
+    def hvacTempatureChangeRate( self ):
+        return self.__hvacRateChange
+    
+    @hvacTempatureChangeRate.setter
+    def hvacTempatureChangeRate( self, newRate ):
+        self.__hvacRateChange = newRate
+        self.runCallback("hvacTempatureChangeRate")
+    
+    
     #function to add/delete devices
     def addDevice(self, device):
         self.deviceList.append(device)
+        
+        if isinstance(device, SN.satelliteNode ):
+            pass #setup sensor values
+        
+            
         return self.deviceList[-1]
+    
+    @property
+    def currentTempatureActual( self ):
+        return self.__currentTempatureActual
+    
+    @currentTempatureActual.setter
+    def currentTempatureActual( self, newTemp ):
+        self.__currentTempatureActual = newTemp
+        [ d.setMeanTempature( self.__currentTempatureActual ) for d in self.deviceList if isinstance(d, SN.satelliteNode)]
+        self.runCallback("currentTempatureActual")    
+    
+    #Will update the Actual Tempature of the room
+    def updateCurrentTemp( self ):
+        #Get overall flow Rate
+        rates = [d.flowRate for d in self.deviceList if isinstance( d, DA.damper )] 
+        avgFlowRate = (sum(rates)/len(rates))/100 if len(rates) > 0 else 1
 
+        #get change due to each factor        
+        changeExt = (self.externalTempatureChangeRate * self.extRateSign)
+        changeHvac = self.hvacMode*(self.hvacTempatureChangeRate*avgFlowRate)
+        
+        self.currentTempatureActual = self.currentTempatureActual  + changeExt + changeHvac
 
 if __name__=="__main__":
     

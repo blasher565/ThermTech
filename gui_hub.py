@@ -39,15 +39,16 @@ class gui_hub:
 
     def drawHub(self, parent ):
         parent.update()
-        self.xSize = parent.winfo_height();
-        self.ySize = parent.winfo_width();
-    
+        self.ySize = parent.winfo_height();
+        self.xSize = parent.winfo_width();
+        
+
         #print( xSize, ySize)
         displayFrame_height = self.ySize;
         
         #create frame
         displayFrame = Frame( parent, width=self.xSize, height=displayFrame_height)
-        displayFrame.grid(row=0, column=0, sticky=N)
+        displayFrame.grid(row=0, column=0, sticky=N+E+S+W)
         
         #globals needed for images
         global  wifiImg, sideButtonBg, sideButtonBgHover, windowBg, upButton, downButton, areaButtonBg, areaButtonBgHover
@@ -181,13 +182,14 @@ class gui_hub:
         
         #clear out other screens
         self.clearAllScreen( canvas )
-        self.hub.delete_bind_tag( "hub_gui" ) #any bind here will have the tag for the element at that it is coming from the gui This allows for screen clears
+        if( self.hub ):
+            self.hub.delete_bind_tag( "hub_gui" ) #any bind here will have the tag for the element at that it is coming from the gui This allows for screen clears
         self.currentScreen = "main"
         
         xNameOffset = 30
         yNameOffset = 40
         
-        getName = lambda: (self.hub.getPrimaryArea().name if self.hub.getPrimaryArea() else "Area Name" )
+        getName = lambda: self.hub and (self.hub.getPrimaryArea().name if self.hub.getPrimaryArea() else "Area Name" )
         areaName = canvas.create_text(xNameOffset, yNameOffset, text=getName() , font="Arial 30", fill="white", anchor="nw", tags=('mainWindow', 'area1Name') )
         bounds = canvas.bbox(areaName)  # returns a tuple like (x1, y1, x2, y2)
         
@@ -202,9 +204,10 @@ class gui_hub:
         canvas.create_line(0, height+yNameOffset+5, width+75+xNameOffset ,  height+yNameOffset+5 , fill="white", width=1 , tags=('mainWindow') )    
         
         # if primary area is set or primary area has name changed
-        self.hub.bind_to_tag( ("hub_gui", "primaryArea") , lambda: canvas.itemconfigure(areaName, text=getName() ))
-        if( self.hub.getPrimaryArea() ):
-            self.hub.getPrimaryArea().bind_to_tag( ("hub_gui", "name" ), lambda: canvas.itemconfigure(areaName, text=getName() ) )
+        if( self.hub ):
+            self.hub.bind_to_tag( ("hub_gui", "primaryArea") , lambda: canvas.itemconfigure(areaName, text=getName() ))
+            if( self.hub.getPrimaryArea() ):
+                self.hub.getPrimaryArea().bind_to_tag( ("hub_gui", "name" ), lambda: canvas.itemconfigure(areaName, text=getName() ) )
             
     
         #Draw Target temp    
@@ -260,7 +263,7 @@ class gui_hub:
         getCurrentHumidity = lambda: u"Humidity:{:>3.0f}%".format( self.hub.getPrimaryArea().currentHumidity if self.hub.getPrimaryArea() else 0 );
         humText = canvas.create_text(xtextLoc, bounds[3]+10, text=getCurrentHumidity(), font="Arial 20", fill="white", anchor="n", tags=('mainWindow', 'area1Humidity') )
        
-        self.hub.bind_to_tag( ("hub_gui", "primaryArea") , lambda: canvas.itemconfigure(currentTempText, text=getCurrentHumidity() ))
+        self.hub.bind_to_tag( ("hub_gui", "primaryArea") , lambda: canvas.itemconfigure(humText, text=getCurrentHumidity() ))
         if( self.hub.getPrimaryArea() ):
             self.hub.getPrimaryArea().bind_to_tag( ("hub_gui", "currentHumidity" ), lambda: canvas.itemconfigure(humText, text=getCurrentHumidity() ) )
             
@@ -282,7 +285,7 @@ class gui_hub:
         summaryText = canvas.create_text(xSummary, ySummary, text=u'Status', font="Arial 25", fill="white", anchor="w", tags=('mainWindow') )    
         
         
-        getHVACMode = lambda: u"{}".format( self.hub.hvac.mode if self.hub.hvac else "Standby")
+        getHVACMode = lambda: u"{}".format( self.hub.hvac.modePretty() if self.hub.hvac else "Standby")
         modeText = canvas.create_text(xSummary, ySummary+45, text=getHVACMode(), font="Arial 25", fill="white", anchor="w", tags=('mainWindow', 'HVACMode') )
         if( self.hub.hvac ):
             self.hub.hvac.bind_to_tag( ("hub_gui", "mode" ), lambda: canvas.itemconfigure(modeText, text=getHVACMode() ) )
@@ -412,6 +415,7 @@ if __name__ == "__main__":
     xVal = 600;
     yVal = 623;
     mainWindow.geometry(str(xVal)+"x"+str(yVal)) 
+    mainWindow.update()
     gui = gui_hub()
     gui.hub = iglu_hub.iglu_hub()
     gui.drawHub(mainWindow)

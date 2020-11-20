@@ -10,7 +10,7 @@ Simple HVAC class which holds the informaiton about the
 
 
 class iglu_hvac:
-    def __init__(self, mode = "Standby", cfm = 2000, exteriorTemp = 70, fanAlwaysOn=False ):
+    def __init__(self, mode = 0, cfm = 2000, exteriorTemp = 70, fanAlwaysOn=False ):
 
         self.__mode = mode
         self.__cfm = cfm;  # cubic feet per minute
@@ -19,7 +19,7 @@ class iglu_hvac:
         self.__fanAlwaysOn = fanAlwaysOn;
         self.__fanOn = fanAlwaysOn;
         if not fanAlwaysOn:
-            self.__fanOn = (mode == "Cooling") or (mode == "Heating");
+            self.__fanOn = (mode == 1) or (mode == -1);
             
         self.__observers = []
             
@@ -56,7 +56,10 @@ class iglu_hvac:
     def mode( self, newMode ):
         self.__mode = newMode
         self.runCallback( "mode")
-         
+        
+  
+    def modePretty( self ):
+        return  "Standby" if self.__mode == 0 else ( "Cooling"  if self.__mode == -1 else "Heating")        
         
     @property
     def cfm( self ):
@@ -86,7 +89,7 @@ class iglu_hvac:
         self.runCallback( "fanAlwaysOn")
         
         #Update the current Fan to be On
-        if not( self.mode == "Cooling" or self.mode == "Heating"):
+        if not( self.mode == -1 or self.mode == 1):
             self.fanOn = newAlwaysOn
         
                 
@@ -101,15 +104,15 @@ class iglu_hvac:
         
         
     def startCooling( self ):
-        self.mode = "Cooling"
+        self.mode = -1
         self.fanOn = True;
         
     def startHeating( self ):
-        self.mode = "Heating"
+        self.mode = 1
         self.fanOn = True;
         
     def stop(self):
-        self.mode = "Standby"
+        self.mode = 0
         if not( self.fanAlwaysOn ):
             self.__fanOn = False
         

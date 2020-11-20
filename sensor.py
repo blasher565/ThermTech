@@ -13,8 +13,12 @@ import iglu_Timer
 
 
 class sensor():
-    def __init__(self, sensorType):
+    def __init__(self, sensorType, mu=10, std=1, bias=0):
         self.sensorType = sensorType
+        self.meanValue = mu
+        self.variance = std
+        self.bias = bias
+
 
     def __repr__(self):
         return self.sensorType
@@ -22,6 +26,6 @@ class sensor():
     # returns new sensor data
     # in reality would query the hardware
     def getUpdate( self ):
-        return (iglu_Timer.globalTimer.absTime.isoformat(), random.randint(0,10))
-
+        return (iglu_Timer.globalTimer.absTime.isoformat(), round(random.gauss(self.meanValue + self.bias, self.variance), 2))
+        #return (iglu_Timer.globalTimer.absTime.isoformat(), round(random.randint(0,10), 2))
 

@@ -17,6 +17,7 @@ class gui_hvac:
         ySize = parent.winfo_height();
         xSize = parent.winfo_width();
         
+        
         yinc=int(ySize/5)
         self.xcol = [ 40, 40 + (xSize/2) - 5, 40 + (xSize/2) + 5]
         self.yRow = [ yinc, yinc*2, yinc*3, yinc*4 ] 
@@ -44,7 +45,7 @@ class gui_hvac:
 
     def updateMode(self):
         if( self.hvacCanvas and self.__hvac_obj ):
-            self.hvacCanvas.itemconfigure( self.hvacCanvas.find_withtag('modeText'), text="{:<10}".format( str(self.hvac.mode) ) ) 
+            self.hvacCanvas.itemconfigure( self.hvacCanvas.find_withtag('modeText'), text="{:<10}".format( str(self.hvac.modePretty()) ) ) 
             
     def updateCFM(self):
         if( self.hvacCanvas and self.__hvac_obj ):

@@ -53,32 +53,17 @@ class iglu_simulation:
     #This is the main update function for the simulator
     # will run everytime a new clock occurs
     def updateSim(self, newTimeValue):
-        #Change to calling hub update function?
-        for a in self.areaList:
-            # print( f"---------{newTimeValue}----------")
-            # print( "T: " + str(a.tempature))
-            # print( "H: " + str(a.humidity))
-            # print( "A: " + str(a.activity))
-            # print( "C: " + str(a.carbonMonoxide))
-            for d in a.deviceList:
-                if "updateSensors" in dir(d):
-                    d.updateSensors()
-                a.updateStats()
-        if( newTimeValue % 10 == 0 ):
-            if( self.hvac.mode == "Cooling"):
-                self.hvac.startHeating()
-            else:
-                self.hvac.startCooling()
-                
-        if( newTimeValue % 15 == 0 ):
-            if( self.hvac.fanAlwaysOn ):
-                self.hvac.fanAlwaysOn = False
-            else:
-                self.hvac.fanAlwaysOn = True
-                
-                
 
-        
+        #
+        for a in self.areaList:
+            #Update HVAC mode for actual temp changes
+            # If hotter outside: "+1", if colder outside: "-1"
+            a.extRateSign =   1 if self.hvac.exteriorTemp > a.currentTempatureActual else ( -1 if  self.hvac.exteriorTemp < a.currentTempatureActual else 0 )
+            a.hvacMode = self.hvac.mode # If heating: "+1", if cooling outside: "-1", if standby: 0
+            
+            #Update the Actual room temps
+            a.updateCurrentTemp()
+
         
     def start(self):
         self.gui.startUI()    

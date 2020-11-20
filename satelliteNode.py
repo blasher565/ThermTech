@@ -14,6 +14,7 @@ Contains the implentation for a satellite Node
 from device import device
 from time import sleep
 from sensor import sensor
+from random import gauss
 
 
 class satelliteNode( device ):
@@ -21,13 +22,13 @@ class satelliteNode( device ):
         device.__init__( self, name, uniqueID, "satelliteNode" )
                 
         self.sensors = {
-                  0 : { "sensor" : sensor( "Thermometer" ), "formatText": u"{}\N{DEGREE SIGN} F", "history": [] },     #Tempature
-                  1 : { "sensor" : sensor( "PersonDetector" ),  "formatText": u"{}", "history": [] },       #Infrared? Person in room?
-                  2 : { "sensor" : sensor( "Hygrometer" ) ,  "formatText": u"{} %", "history" : [] },                   #Humidity
-                  3 : { "sensor" : sensor( "CarbonMonoxide"),  "formatText": u"{} PPM", "history": [] }     #Carbon Monoxide
+                  0 : { "sensor" : sensor( "Tempature", mu=70, std=.05, bias=gauss(0,.1) ), "formatText": u"{}\N{DEGREE SIGN} F", "history": [] },     #Tempature
+                  1 : { "sensor" : sensor( "Activity", mu=0, std=10, bias=0 ),  "formatText": u"{}", "history": [] },       #Infrared? Person in room?
+                  2 : { "sensor" : sensor( "Humidity", mu=40, std=.5, bias=gauss(0,.2)  ),  "formatText": u"{} %", "history" : [] },                   #Humidity
+                  3 : { "sensor" : sensor( "C0", mu=2, std=.1, bias=gauss(0,.2) ),  "formatText": u"{} PPM", "history": [] }     #Carbon Monoxide
                 }
         
-        self.maxHistorySize = 50
+        self.maxHistorySize = 10
         
     #print function
     def __repr__(self):
@@ -35,6 +36,18 @@ class satelliteNode( device ):
         for k1, v1 in self.sensors.items():
             out += "[{}]\n-----------\n{}\n\n".format(str( v1["sensor"] ),  "\n".join(map(str, v1["history"])))
         return out;
+
+    def setMeanTempature(self, value):
+        self.sensors[0]["sensor"].meanValue = value
+    
+    def setMeanHumidity(self, value):
+        self.sensors[2]["sensor"].meanValue = value
+    
+    def setMeanActivity(self, value):
+        self.sensors[1]["sensor"].meanValue = value
+    
+    def setMeanCarbonMonoxide(self, value):
+        self.sensors[3]["sensor"].meanValue = value    
 
     #Simple Call to update the sensor and add it to the history
     def updateSensors( self, index=-1 ):

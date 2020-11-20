@@ -33,12 +33,13 @@ class gui_main():
     def draw(self):
         
         self.root.title('ThermTech Interior Climate Solution')
-        self.root.grid_columnconfigure(0, weight=1, uniform="group1")
-        self.root.grid_columnconfigure(1, weight=1, uniform="group1")
+        self.root.grid_columnconfigure(0, weight=1)
+        self.root.grid_columnconfigure(1, weight=1)
         self.root.grid_rowconfigure(0, weight=1)
+        self.root.grid_rowconfigure(1, weight=1)
         self.root.geometry("1200x800") # fix window size for ease of placing things
         #self.root.geometry( '%sx%s' % (int(self.root.winfo_screenwidth() *.8), int(self.root.winfo_screenheight()*.8))) 
-        self.root.resizable(False,False)
+        #self.root.resizable(False,False)
         self.root.update()
         
         comp_label = Label(text='Welcome to Iglu\nDevice Emulation Application:  Test Environment', font=("Helvetica bold", 12))
@@ -49,25 +50,27 @@ class gui_main():
         #Runing time Side
         frameHeight = self.root.winfo_height() - comp_label.winfo_height()
         frameWidth = self.root.winfo_width() 
+        
+        #This is the simulation Frame
         self.start_frame = Frame(self.root, height=frameHeight, width=int(frameWidth/2))
-        self.start_frame.pack(side=LEFT, anchor=CENTER, fill=BOTH)
+        self.start_frame.pack(side=LEFT, anchor=W, fill=BOTH)
         self.start_frame.update()
-
+        
         #Area / Config side
-        self.zone_frame = Frame(self.root, height=frameHeight, width=frameWidth)
-        self.zone_frame.pack(side=RIGHT, anchor=CENTER, fill=BOTH)
+        self.zone_frame = Frame(self.root, height=frameHeight, width=int(frameWidth/2) )
+        self.zone_frame.pack(side=RIGHT, anchor=E, fill=BOTH)
         self.zone_frame.pack_propagate(False)
-
 
         # Start Frame is broken into top frame for HUB
         # and bottom frame for HVAC
         #
         self.hub_frame = Frame(self.start_frame, height=frameHeight-125, width=self.start_frame.winfo_width())
         self.hub_frame.pack(side=TOP, anchor=N, fill=BOTH)
+        self.hub_frame.update()
         
         self.hvac_frame = Frame(self.start_frame, height=125, width=self.start_frame.winfo_width())
-        self.hvac_frame.pack(side=BOTTOM, anchor=S, fill=BOTH)
-        
+        self.hvac_frame.pack(side=TOP, anchor=S, fill=BOTH)
+        self.hvac_frame.update()
         
         self.hub_frame.update();
         self.gui_hub.drawHub(self.hub_frame)
@@ -132,5 +135,6 @@ class gui_main():
 
 if __name__ == "__main__":
     gui = gui_main()
+    gui.draw()
     gui.startUI()
     iglu_Timer.terminate()
