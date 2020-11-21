@@ -11,6 +11,7 @@ from  math import *
 from iglu_Timer import *
 from iglu_utils import *
 import calendar
+from copy import deepcopy
 
 class gui_hub:
     def __init__(self):
@@ -145,6 +146,7 @@ class gui_hub:
         canvasLoc.tag_bind( textCanvas, "<Enter>", lambda e: canvasLoc.itemconfigure(buttonCanvas, image=sideButtonBgHover  ) )
         canvasLoc.tag_bind( textCanvas, "<Leave>", lambda e: canvasLoc.itemconfigure(buttonCanvas, image=sideButtonBg  ) )
         
+        
         #mouse down command
         if "command" in kwargs:
             canvasLoc.tag_bind( buttonCanvas, "<Button-1>", kwargs["command"])
@@ -152,13 +154,14 @@ class gui_hub:
         
         return buttonCanvas, textCanvas
     
-    def makeAreaButton(self, canvasLoc, *args, **kwargs ):
+    def makeAreaButton(self, canvasLoc, *args, **kwargs ):       
+        
         if "tags" in kwargs:
             buttonCanvas = canvasLoc.create_image(args[0], args[1],image=areaButtonBg, tags=kwargs["tags"])
-            textCanvas =  canvasLoc.create_text(args[0], args[1], text=args[2], font=("Arial 15 bold"), fill="#ffffff", tags=kwargs["tags"] )
+            textCanvas =  canvasLoc.create_text(args[0], args[1], text=args[2].name, font=("Arial 15 bold"), fill="#ffffff", tags=kwargs["tags"] )
         else:
             buttonCanvas = canvasLoc.create_image(args[0], args[1],image=areaButtonBg)
-            textCanvas =  canvasLoc.create_text(args[0], args[1], text=args[2], font=("Arial 15 bold"), fill="#ffffff" )
+            textCanvas =  canvasLoc.create_text(args[0], args[1], text=args[2].name, font=("Arial 15 bold"), fill="#ffffff" )
         
         #Need to add to both due 
         canvasLoc.tag_bind( buttonCanvas, "<Enter>", lambda e: canvasLoc.itemconfigure(buttonCanvas, image=areaButtonBgHover  ) )
@@ -166,10 +169,14 @@ class gui_hub:
         canvasLoc.tag_bind( textCanvas, "<Enter>", lambda e: canvasLoc.itemconfigure(buttonCanvas, image=areaButtonBgHover  ) )
         canvasLoc.tag_bind( textCanvas, "<Leave>", lambda e: canvasLoc.itemconfigure(buttonCanvas, image=areaButtonBg  ) )
         
+        canvasLoc.update()
+        xSize = canvasLoc.winfo_width()
+        ySize = canvasLoc.winfo_height()
+        
         #mouse down command
-        if "command" in kwargs:
-            canvasLoc.tag_bind( buttonCanvas, "<Button-1>", kwargs["command"])
-            canvasLoc.tag_bind( textCanvas, "<Button-1>", kwargs["command"]) 
+        areaCmd = lambda e: self.drawAreaDetailScreen(canvasLoc, xSize, ySize, args[2] )
+        canvasLoc.tag_bind( buttonCanvas, "<Button-1>", areaCmd)
+        canvasLoc.tag_bind( textCanvas, "<Button-1>", areaCmd) 
         
         return buttonCanvas, textCanvas
     
@@ -254,7 +261,7 @@ class gui_hub:
         getInsideTemp = lambda: u"Temp: {:>02.0f}\N{DEGREE SIGN}".format( self.hub.getPrimaryArea().currentTempature if self.hub.getPrimaryArea() else 0 );
         currentTempText = canvas.create_text(xtextLoc, bounds2[3]+10, text=getInsideTemp(), font="Arial 20 ", fill="white", anchor='n', tags=('mainWindow', 'area1Temp') )
         
-        self.hub.bind_to_tag( ("hub_gui", "primaryArea") , lambda: canvas.itemconfigure(currentTempText, text=getCurrentTemp() ))
+        #self.hub.bind_to_tag( ("hub_gui", "primaryArea") , lambda: canvas.itemconfigure(currentTempText, text=getCurrentTemp() ))
         if( self.hub.getPrimaryArea() ):
             self.hub.getPrimaryArea().bind_to_tag( ("hub_gui", "currentTempature" ), lambda: canvas.itemconfigure(currentTempText, text=getInsideTemp() ) )
             
@@ -263,7 +270,7 @@ class gui_hub:
         getCurrentHumidity = lambda: u"Humidity:{:>3.0f}%".format( self.hub.getPrimaryArea().currentHumidity if self.hub.getPrimaryArea() else 0 );
         humText = canvas.create_text(xtextLoc, bounds[3]+10, text=getCurrentHumidity(), font="Arial 20", fill="white", anchor="n", tags=('mainWindow', 'area1Humidity') )
        
-        self.hub.bind_to_tag( ("hub_gui", "primaryArea") , lambda: canvas.itemconfigure(humText, text=getCurrentHumidity() ))
+        #self.hub.bind_to_tag( ("hub_gui", "primaryArea") , lambda: canvas.itemconfigure(humText, text=getCurrentHumidity() ))
         if( self.hub.getPrimaryArea() ):
             self.hub.getPrimaryArea().bind_to_tag( ("hub_gui", "currentHumidity" ), lambda: canvas.itemconfigure(humText, text=getCurrentHumidity() ) )
             
@@ -302,13 +309,13 @@ class gui_hub:
         getArea2Temp = lambda: "{:}".format( u"{:>02.0f}\N{DEGREE SIGN}".format( self.hub.getSecondaryArea().currentTempature) if self.hub.getSecondaryArea() else "" )
         getArea2Hum = lambda: "{:}".format( u"{:>3.0f}%".format( self.hub.getSecondaryArea().currentHumidity) if self.hub.getSecondaryArea() else "" )
         
-        areas2Name = canvas.create_text(int(screenSizex*.60), ySummary, text=getArea2Name(), font="Arial 25", fill="white", tags=('mainWindow', 'area2Name') )
-        area2Temp = canvas.create_text(int(screenSizex*.60), ySummary+45, text=getArea2Temp(), font="Arial 25", fill="white", tags=('mainWindow', 'area2Temp') )
-        area2Humd = canvas.create_text(int(screenSizex*.60), ySummary+90, text=getArea2Hum(), font="Arial 25", fill="white", tags=('mainWindow', 'area2Humidity') )
+        areas2Name = canvas.create_text(int(screenSizex*.50), ySummary, text=getArea2Name(), font="Arial 25", fill="white", tags=('mainWindow', 'area2Name') )
+        area2Temp = canvas.create_text(int(screenSizex*.50), ySummary+45, text=getArea2Temp(), font="Arial 25", fill="white", tags=('mainWindow', 'area2Temp') )
+        area2Humd = canvas.create_text(int(screenSizex*.50), ySummary+90, text=getArea2Hum(), font="Arial 25", fill="white", tags=('mainWindow', 'area2Humidity') )
         
-        self.hub.bind_to_tag( ("hub_gui", "secondaryArea") , lambda: canvas.itemconfigure(areas2Name, text=getArea2Name() ))
-        self.hub.bind_to_tag( ("hub_gui", "secondaryArea") , lambda: canvas.itemconfigure(area2Temp, text=getArea2Temp() ))
-        self.hub.bind_to_tag( ("hub_gui", "secondaryArea") , lambda: canvas.itemconfigure(area2Humd, text=getArea2Hum() ))
+        #self.hub.bind_to_tag( ("hub_gui", "secondaryArea") , lambda: canvas.itemconfigure(areas2Name, text=getArea2Name() ))
+        #self.hub.bind_to_tag( ("hub_gui", "secondaryArea") , lambda: canvas.itemconfigure(area2Temp, text=getArea2Temp() ))
+        #self.hub.bind_to_tag( ("hub_gui", "secondaryArea") , lambda: canvas.itemconfigure(area2Humd, text=getArea2Hum() ))
         if( self.hub.getSecondaryArea() ):
             self.hub.getSecondaryArea().bind_to_tag( ("hub_gui", "name" ), lambda: canvas.itemconfigure(areas2Name, text=getArea2Name() ) )
             self.hub.getSecondaryArea().bind_to_tag( ("hub_gui", "currentTempature" ), lambda: canvas.itemconfigure(area2Temp, text=getArea2Temp() ) )
@@ -324,9 +331,9 @@ class gui_hub:
         area3Temp = canvas.create_text(int(screenSizex*.80), ySummary+45, text=getArea3Temp(), font="Arial 25", fill="white", tags=('mainWindow', 'area3Temp') )
         area3Humd = canvas.create_text(int(screenSizex*.80), ySummary+90, text=getArea3Hum(), font="Arial 25", fill="white", tags=('mainWindow', 'area3Humidity') )
     
-        self.hub.bind_to_tag( ("hub_gui", "tertiaryArea") , lambda: canvas.itemconfigure(area3Name, text=getArea3Name() ))
-        self.hub.bind_to_tag( ("hub_gui", "tertiaryArea") , lambda: canvas.itemconfigure(area3Temp, text=getArea3Temp() ))
-        self.hub.bind_to_tag( ("hub_gui", "tertiaryArea") , lambda: canvas.itemconfigure(area3Humd, text=getArea3Hum() ))
+        #self.hub.bind_to_tag( ("hub_gui", "tertiaryArea") , lambda: canvas.itemconfigure(area3Name, text=getArea3Name() ))
+        #self.hub.bind_to_tag( ("hub_gui", "tertiaryArea") , lambda: canvas.itemconfigure(area3Temp, text=getArea3Temp() ))
+        #self.hub.bind_to_tag( ("hub_gui", "tertiaryArea") , lambda: canvas.itemconfigure(area3Humd, text=getArea3Hum() ))
         if( self.hub.getTertiaryArea() ):
             self.hub.getTertiaryArea().bind_to_tag( ("hub_gui", "name" ), lambda: canvas.itemconfigure(area3Name, text=getArea3Name() ) )
             self.hub.getTertiaryArea().bind_to_tag( ("hub_gui", "currentTempature" ), lambda: canvas.itemconfigure(area3Temp, text=getArea3Temp() ) )
@@ -376,19 +383,33 @@ class gui_hub:
         canvas.create_line(0, height+yNameOffset, width+100+xNameOffset ,  height+yNameOffset , fill="white", width=3 , tags=('mainWindow') )
         canvas.create_line(0, height+yNameOffset+5, width+75+xNameOffset ,  height+yNameOffset+5 , fill="white", width=1 , tags=('mainWindow') )
         
-        areaDetailFunc= lambda e: self.drawAreaDetailScreen(canvas, screenSizex, screenSizey, 0)
-        self.makeAreaButton( canvas, (screenSizex*.37), (screenSizey*.25), "Area Name", tags=('areasWindow'), command=areaDetailFunc)
+        if not self.hub:
+            #self.makeAreaButton( canvas, (screenSizex*.37), (screenSizey*.25), "Area Name", tags=('areasWindow'), command=lambda e: self.drawAreaDetailScreen(canvas, screenSizex, screenSizey))
+            self.makeAreaButton( canvas, (screenSizex*.37), (screenSizey*.25), None, tags=('areasWindow'))
+        else:
+            spacing = 50
+            lastBottom = screenSizey*.25;
+            
+            for i,a in enumerate(self.hub.areaList):
+                
+                bc, tc = self.makeAreaButton( canvas, (screenSizex*.37), (lastBottom+spacing), a, tags=('mainWindow', 'areasWindow'))
+                lastBottom = canvas.bbox(bc)[3]
         
         
         
-    def drawAreaDetailScreen(self, canvas, screenSizex, screenSizey, areaID ):
+    def drawAreaDetailScreen(self, canvas, screenSizex, screenSizey, area):
         self.clearAllScreen( canvas )
-        self.hub.delete_bind_tag( "hub_gui" ) 
-        self.currentScreen = "settings"
-        
+        self.hub.delete_bind_tag( "hub_gui" )
+        self.currentScreen = "areaDetail"
+
         xNameOffset = 30
         yNameOffset = 40
-        areaName = canvas.create_text(xNameOffset, 0, text=u'Area Name', font="Arial 30", fill="white", tags=('mainWindow', 'area1Name') )
+        
+        if area:
+            areaName = area.name
+        else:    
+            areaName = 'Area Name'
+        areaName = canvas.create_text(xNameOffset, 0, text=areaName + " Details", font="Arial 30", fill="white", tags=('areasWindow', 'areaDetailName') )
         bounds = canvas.bbox(areaName)  # returns a tuple like (x1, y1, x2, y2)
         
         width = bounds[2] - bounds[0]
@@ -397,12 +418,229 @@ class gui_hub:
         canvas.coords(areaName, bounds[2], bounds[3]+yNameOffset )
         
         #(x1, y1, x2, y2)
-        canvas.create_line(0, height+yNameOffset, width+100+xNameOffset ,  height+yNameOffset , fill="white", width=3 , tags=('mainWindow') )
-        canvas.create_line(0, height+yNameOffset+5, width+75+xNameOffset ,  height+yNameOffset+5 , fill="white", width=1 , tags=('mainWindow') )   
+        canvas.create_line(0, height+yNameOffset, width+100+xNameOffset ,  height+yNameOffset , fill="white", width=3 , tags=('areasWindow') )
+        canvas.create_line(0, height+yNameOffset+5, width+75+xNameOffset ,  height+yNameOffset+5 , fill="white", width=1 , tags=('areasWindow') )   
+        
+        ytextLoc = 275
+        xtextLoc = 340
+        pad = 0
+        getTargetTemp = lambda: "{:02.0f}\N{DEGREE SIGN}".format(area.targetTempature if area else 0 );
+        targetTempText = canvas.create_text(xtextLoc, ytextLoc, text=getTargetTemp() , font="Arial 90 ", fill="white", tags=('areasWindow','targetTemp') )
+        
+        if( area ):
+            area.bind_to_tag( ("hub_gui", "targetTempature" ), lambda: canvas.itemconfigure(targetTempText, text=getTargetTemp() ) )
+            
+        
+        bounds = canvas.bbox(targetTempText)  # returns a tuple like (x1, y1, x2, y2)
+        width = bounds[2] - bounds[0]
+        height = bounds[3] - bounds[1]
+
+        upButtonRef = canvas.create_image(xtextLoc-20, int(bounds[1] - upButton.height()/2 - pad ) , image = upButton, tags=('areasWindow'))
+        downButtonRef = canvas.create_image(xtextLoc-20, int(bounds[3] + upButton.height()/2 + pad ) , image = downButton, tags=('areasWindow'))
+        
+        def decTargetTemp():
+            if( area):
+                area.targetTempature = area.targetTempature - 1
+            
+        def incTargetTemp():
+            if( area ):
+                area.targetTempature = area.targetTempature + 1
+            
+        canvas.tag_bind( upButtonRef, "<Button-1>", lambda e:  incTargetTemp() )
+        canvas.tag_bind( downButtonRef, "<Button-1>", lambda e:  decTargetTemp() ) 
+        
+        
+        #
+        # Current Temp
+        #
+        
+        ytextLoc = 155
+        xtextLoc = 110
+        insideLabel = canvas.create_text(xtextLoc, ytextLoc, text=u'Current Stats:', font="Arial 20 underline", fill="white", anchor='n', tags=('mainWindow') )
+ 
+        getInsideTemp = lambda: u"Temp: {:>02.0f}\N{DEGREE SIGN}".format( area.currentTempature if area else 0 );
+        currentTempText = canvas.create_text(xtextLoc, canvas.bbox(insideLabel)[3]+10, text=getInsideTemp(), font="Arial 20 ", fill="white", anchor='n', tags=('mainWindow', 'areaSettingsTemp') )
+        
+        if( area ):
+            area.bind_to_tag( ("hub_gui", "currentTempature" ), lambda: canvas.itemconfigure(currentTempText, text=getInsideTemp() ) )        
+        
+        
+        #
+        # Current Humidity
+        #
+        
+        getCurrentHumidity = lambda: u"Humidity:{:>3.0f}%".format( area.currentHumidity if area else 0 );
+        humText = canvas.create_text(xtextLoc, canvas.bbox(currentTempText)[3]+10, text=getCurrentHumidity(), font="Arial 20", fill="white", anchor="n", tags=('mainWindow', 'areaSettingsHumidity') )
+       
+        if( area ):
+            area.bind_to_tag( ("hub_gui", "currentHumidity" ), lambda: canvas.itemconfigure(humText, text=getCurrentHumidity() ) )
+        
+        #
+        # Current Carbon Monoxide
+        #
+        getCurrentCarbonMonoxide = lambda: u"C0: {:>2.2f} PPM".format( round(area.carbonMonoxide,2) if area else 0 );
+        coText = canvas.create_text(xtextLoc, canvas.bbox(humText)[3]+10, text=getCurrentCarbonMonoxide(), font="Arial 20", fill="white", anchor="n", tags=('mainWindow', 'areaSettingsCarbonMonoxide') )
+       
+        if( area ):
+            area.bind_to_tag( ("hub_gui", "carbonMonoxide" ), lambda: canvas.itemconfigure(coText, text=getCurrentCarbonMonoxide() ) )
+            
+        #
+        # Current Carbon Monoxide
+        #
+        getCurrentActivity = lambda: u"Activity: {:s}".format( ("High" if (area.activity > 15) else ("Low" if (area.activity > 5) else "Empty" ) ) if area else "Unknown" )
+        #getCurrentActivity = lambda: u"Activity: {:>2.2f}".format( area.activity if area else 0 )
+        actText = canvas.create_text(xtextLoc, canvas.bbox(coText)[3]+10, text=getCurrentActivity(), font="Arial 20", fill="white", anchor="n", tags=('mainWindow', 'areaSettingsActivity') )
+       
+        if( area ):
+            area.bind_to_tag( ("hub_gui", "activity" ), lambda: canvas.itemconfigure(actText, text=getCurrentActivity() ) )
         
         #Rename Area?
         #Set primary, secondary, None
         #Device List? 
+        
+        #
+        # Device Priority List Selection
+        #
+        #
+        if( self.hub ):
+            dispPrimary=len(self.hub.areaList)>1
+            dispSecondary=len(self.hub.areaList)>1
+            dispTert=len(self.hub.areaList)>2
+        else:
+            dispPrimary=True
+            dispSecondary=True
+            dispTert=True
+
+        
+        if len(self.hub.areaList)>2:
+            xValue = 110
+        else:
+            xValue = 175
+            
+        yValue = screenSizey-160
+        butSize = 20
+        textPadding = 10
+        entryPadding = 20
+        
+        if dispPrimary:
+            primButton = canvas.create_oval( xValue, yValue, xValue+butSize, yValue+butSize, fill="grey", tags=('mainWindow', 'primaryButton')  )
+            primText = canvas.create_text(canvas.bbox(primButton)[2]+textPadding, yValue, text="Primary", font="Arial 18", anchor="nw", fill="white", tags=('mainWindow', 'primaryText') )
+            
+        if dispSecondary:
+            xValue = canvas.bbox(primText)[2] + entryPadding
+            secButton = canvas.create_oval( xValue, yValue, xValue+butSize, yValue+butSize, fill="grey", tags=('mainWindow', 'secondaryButton')  )
+            secText = canvas.create_text(canvas.bbox(secButton)[2]+textPadding, yValue, text="Secondary", font="Arial 18", anchor="nw", fill="white", tags=('mainWindow', 'secondaryText') )
+            
+        if dispTert:
+            xValue= canvas.bbox(secText)[2] + entryPadding
+            triButton = canvas.create_oval( xValue, yValue, xValue+butSize, yValue+butSize, fill="grey", tags=('mainWindow', 'tertiaryButton')  )
+            triText = canvas.create_text(canvas.bbox(triButton)[2]+textPadding, yValue, text="Tertiary", font="Arial 18", anchor="nw", fill="white", tags=('mainWindow', 'tertiaryText') )
+            
+        if( self.hub ):
+            
+            def updateAreaOrder( ):
+            
+                if dispPrimary:
+                    canvas.itemconfig( primButton, fill="grey")
+                    canvas.tag_unbind(primButton, "<Enter>" )
+                    canvas.tag_unbind(primButton, "<Leave>" )
+                    canvas.tag_unbind(primButton, "<Button-1>" )
+                    canvas.tag_unbind(primButton, "<ButtonRelease-1>" )
+                
+                if dispSecondary:
+                    canvas.itemconfig( secButton, fill="grey")
+                    canvas.tag_unbind(secButton, "<Enter>" )
+                    canvas.tag_unbind(secButton, "<Leave>" )
+                    canvas.tag_unbind(secButton, "<Button-1>" )
+                    canvas.tag_unbind(secButton, "<ButtonRelease-1>" )
+                
+                if dispTert:
+                    canvas.itemconfig( triButton, fill="grey")
+                    canvas.tag_unbind(triButton, "<Enter>" )
+                    canvas.tag_unbind(triButton, "<Leave>" )
+                    canvas.tag_unbind(triButton, "<Button-1>" )
+                    canvas.tag_unbind(triButton, "<ButtonRelease-1>" )
+                
+                
+                if( dispPrimary and self.hub.getPrimaryArea() == area ):
+                    canvas.itemconfig( primButton, fill="red")
+                elif( dispSecondary and self.hub.getSecondaryArea() == area ):
+                    canvas.itemconfig( secButton, fill="red")
+                elif( dispTert and self.hub.getTertiaryArea() == area ):
+                    canvas.itemconfig( triButton, fill="red")
+            
+            
+                #bind buttons
+                if dispPrimary and not(self.hub.getPrimaryArea() == area):
+                    
+                    def onClick( e ):
+                        canvas.itemconfigure(primButton, fill="red" )
+                        self.hub.setPrimaryArea(area)
+                        updateAreaOrder()
+                        
+                    canvas.tag_bind( primButton, "<Enter>", lambda e: canvas.itemconfigure(primButton, fill="green"  ) )
+                    canvas.tag_bind( primButton, "<Leave>", lambda e: canvas.itemconfigure(primButton, fill="grey"  ) )
+                    canvas.tag_bind( primButton, "<Button-1>", onClick )
+                    canvas.tag_bind( primButton, "<ButtonRelease-1>", lambda e: canvas.itemconfigure(primButton, fill="green"  ) )
+                    
+                if dispSecondary and not(self.hub.getSecondaryArea() == area):
+                    
+                    def onClick( e ):
+                        canvas.itemconfigure(secButton, fill="red" )
+                        self.hub.setSecondaryArea(area)
+                        updateAreaOrder()
+                    
+                    canvas.tag_bind( secButton, "<Enter>", lambda e: canvas.itemconfigure(secButton, fill="green"  ) )
+                    canvas.tag_bind( secButton, "<Leave>", lambda e: canvas.itemconfigure(secButton, fill="grey"  ) )
+                    canvas.tag_bind( secButton, "<Button-1>", onClick )
+                    canvas.tag_bind( secButton, "<ButtonRelease-1>", lambda e: canvas.itemconfigure(secButton, fill="green"  ) )
+                    
+                if dispTert and not( self.hub.getTertiaryArea() == area):
+                    
+                    def onClick( e ):
+                        canvas.itemconfigure(triButton, fill="red" )
+                        self.hub.setTertiaryArea(area)
+                        updateAreaOrder()
+                                        
+                    canvas.tag_bind( triButton, "<Enter>", lambda e: canvas.itemconfigure(triButton, fill="green"  ) )
+                    canvas.tag_bind( triButton, "<Leave>", lambda e: canvas.itemconfigure(triButton, fill="grey"  ) )
+                    canvas.tag_bind( triButton, "<Button-1>", onClick )
+                    canvas.tag_bind( triButton, "<ButtonRelease-1>", lambda e: canvas.itemconfigure(triButton, fill="green"  ) )
+            
+            updateAreaOrder()
+            
+
+
+            
+        
+        #
+        # Schedule button
+        #
+        schedButtonCanvas = canvas.create_image(screenSizex/2, screenSizey-60,image=areaButtonBg, tags=('mainWindow', 'areaSettingsActivity') )
+        schedTextCanvas =  canvas.create_text(screenSizex/2, screenSizey-60, text="Veiw/Modify Schedule", font=("Arial 15 bold"), fill="#ffffff",  tags=('mainWindow', 'areaSettingsActivity') )
+
+        #Need to add to both due 
+        canvas.tag_bind( schedButtonCanvas, "<Enter>", lambda e: canvas.itemconfigure(schedButtonCanvas, image=areaButtonBgHover  ) )
+        canvas.tag_bind( schedButtonCanvas, "<Leave>", lambda e: canvas.itemconfigure(schedButtonCanvas, image=areaButtonBg  ) )
+        canvas.tag_bind( schedTextCanvas, "<Enter>", lambda e: canvas.itemconfigure(schedButtonCanvas, image=areaButtonBgHover  ) )
+        canvas.tag_bind( schedTextCanvas, "<Leave>", lambda e: canvas.itemconfigure(schedButtonCanvas, image=areaButtonBg  ) )
+        
+        if(area):
+            pass
+#            canvas.tag_bind( schedButtonCanvas, "<Button-1>", pass )
+#            canvas.tag_bind( schedTextCanvas, "<Button-1>", pass )  
+        
+
+        
+        canvas.update()
+        # xSize = canvasLoc.winfo_width()
+        # ySize = canvasLoc.winfo_height()
+        
+        #mouse down command
+        # areaCmd = lambda e: self.drawAreaDetailScreen(canvasLoc, xSize, ySize, args[2] )
+        # canvasLoc.tag_bind( buttonCanvas, "<Button-1>", areaCmd)
+        # canvasLoc.tag_bind( textCanvas, "<Button-1>", areaCmd) 
+        
         
     
     def drawSettingsScreen( self, canvas, screenSizex, screenSizey ):

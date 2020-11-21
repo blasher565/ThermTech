@@ -34,6 +34,8 @@ class iglu_hub:
         #bind the update function to the clock
         iglu_Timer.globalTimer.bind_to(self.tick)
         
+        self.lastTickTimeStamp = -10
+        
     #links callback funciton to a tag
     def bind_to_tag(self, tag, callback ):
         self.__observers.append( (tag,callback) )
@@ -160,7 +162,68 @@ class iglu_hub:
         # Adjustmets
         # self.hvac.mode               -- "Cooling"-1, "Heating"+1,"Standby"0
         # damperRate                   -- 100 full flow, 0 blocking
+
+        """
+        # 
+        # Christian's Implementation
+        #
         
+        size = len(self.areaList)
+        tempMax = -1000;        
+        tempMaxDiff = -1000;        
+        tempDiff = [0]*size
+        
+        extRmax = -1000
+        extRValue = [0]*size
+        
+        if( self.hvac.fanOn ):
+            threshDiff = .5
+        else:
+            threshDiff = 2
+        
+        for i,a in enumerate(self.areaList):
+            for d in a.deviceList:
+                if "updateSensors" in dir(d):
+                    d.updateSensors()  #Gets new room readings
+                    
+            a.updateStats( newTimeValue ) #takes new room readings and gathers stats
+            
+            tempMax = max(tempMax, a.currentTempature)
+            tempDiff[i] = (a.targetTempature - a.currentTempature)
+            tempMaxDiff = max(tempMaxDiff, tempDiff[i] )
+            
+            extRmax = max(extRmax, a.externalTempatureChangeRate)
+            extRValue[i] = a.externalTempatureChangeRate
+
+        
+        
+        #Setup HVAC mode
+        m = 0
+        for i in range(0,len(self.areaList)):
+            m = m + (tempDiff[i] * extRValue[i]) / (size * extRmax)
+        
+        print( m )
+        
+        if( m < -threshDiff ):
+            self.hvac.startCooling()
+        elif( m > threshDiff ):
+            self.hvac.startHeating()
+        else:
+            self.hvac.stop()
+            
+        #Setup dampers
+        for i, a in enumerate(self.areaList):
+            flowRate = abs(tempDiff[i]) / abs(tempMaxDiff) if tempMaxDiff != 0 else 1 
+            for d in a.deviceList:
+                if isinstance(d, DA.damper):
+                    d.flowRate = flowRate
+        """    
+        
+        
+        
+        #
+        # Brandon's Simplistic Implementation
+        #
         
         numCold = 0;
         numHot = 0;
@@ -168,38 +231,80 @@ class iglu_hub:
         coldSize = 0;
         hotSize = 0;
         
-        trigThresh = .75
+        trigThresh = 1
+        minTimeDiff = 10 
         
-        #Update or collect information for each area        
-        for a in self.areaList:
+        for i,a in enumerate(self.areaList):
             for d in a.deviceList:
                 if "updateSensors" in dir(d):
                     d.updateSensors()  #Gets new room readings
                     
             a.updateStats( newTimeValue ) #takes new room readings and gathers stats
+        
+        
+        #Update or collect information for each area        
+        maxColdDiff = 0
+        maxHotDiff = 0
+        for a in self.areaList:
             
             #collect decision making information
-            if(a.currentTempature < a.targetTempature ):
-                diff = (a.targetTempature - a.currentTempature)
-                if( diff > trigThresh ):
+            diff = a.currentTempature - a.targetTempature
+            if(diff < 0 ):
+                maxColdDiff = max(maxColdDiff, abs(diff))
+                if( abs(diff) > trigThresh ):
                     numCold = numCold + 1
-                    coldSize = coldSize + diff
-            elif(a.currentTempature > a.targetTempature ): 
-                diff = (a.currentTempature - a.targetTempature)
-                if( diff > trigThresh ):
+                    coldSize = coldSize + abs(diff)
+            elif(diff > 0):                 
+                maxHotDiff = max(maxHotDiff, abs(diff))
+                if( abs(diff) > trigThresh ):
                     numHot = numHot + 1
-                    hotSize = hotSize + diff
+                    hotSize = hotSize + abs(diff)
+
+        #only allow change after minTimeDiff has passed
+        if( (newTimeValue - self.lastTickTimeStamp) >  minTimeDiff ):
+            self.lastTickTimeStamp = newTimeValue
+            
+            #print( (numCold,numHot), (coldSize,hotSize))
+            avgCold = (coldSize/max(1,numCold))
+            avgHot = (hotSize/max(1,numHot))
+            
+            if( numCold > numHot or  avgCold > avgHot):
+                self.hvac.startHeating()
+            elif( numCold < numHot or avgCold < avgHot):
+                self.hvac.startCooling()
+            elif( numCold == numHot and avgCold == avgHot):
+                self.hvac.stop()
+            else:
+                #print("I DON'T KNOW WHAT TO DO!!!!!")
+                pass
         
-        #print( (numCold,numHot), (coldSize,hotSize))
+                
+        #iterate again and check dampers?
+        for a in self.areaList:
+            #collect decision making information
+            diff = a.currentTempature - a.targetTempature 
+            if(( diff > 0 and self.hvac.mode == 1) or    # need cooling, but is heating,
+               ( diff < 0 and self.hvac.mode == -1) ):   # need heating, but is cooling,
+                #print( f"{a.name}  needs OPPOSITE OF HVAC")
+                for d in a.deviceList:
+                    if isinstance(d, DA.damper):
+                        d.flowRate = 0
+            elif( diff > 0 and self.hvac.mode == -1 ): #need cooling and is cooling
+                #print( f"{a.name} needs COOLING and HVAC is COOLING ")
+                for d in a.deviceList:
+                    if isinstance(d, DA.damper):
+                        d.flowRate = max(.20, abs(diff)/maxHotDiff ) * 100
+            elif( diff < 0 and self.hvac.mode == 1 ): #need heating and is heating
+                #print( f"{a.name} needs HEATING and HVAC is HEATING")
+                for d in a.deviceList:
+                    if isinstance(d, DA.damper):
+                        d.flowRate = max(.20, abs(diff)/maxColdDiff ) * 100
+            elif( self.hvac.mode == 0 ):  
+                #print( f"{a.name} OPEN HVAC in Standby ")
+                for d in a.deviceList:
+                    if isinstance(d, DA.damper):
+                        d.flowRate = 100
         
-        if( numCold > numHot or coldSize > hotSize):
-            self.hvac.startHeating()
-        elif( numCold < numHot or coldSize < hotSize):
-            self.hvac.startCooling()
-        elif( numCold == numHot and coldSize == hotSize):
-            self.hvac.stop()
-        
-                  
     
 if __name__=="__main__":
     hub = iglu_hub()

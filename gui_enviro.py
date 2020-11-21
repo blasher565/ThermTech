@@ -346,7 +346,7 @@ class gui_enviro:
         currentTempLabel2= Label( parentFrame, text="", width=4,  bg="black", font=("Arial 10 bold"), fg="white")
         tempRate = DoubleVar()
         hvacRate = DoubleVar()
-        currentTempLabel3 = Scale( parentFrame, orient=HORIZONTAL, variable = tempRate, tickinterval=.01, from_=0, to=.5, resolution=.05, command=lambda r: setTempRate(zone, r) )
+        currentTempLabel3 = Scale( parentFrame, orient=HORIZONTAL, variable = tempRate, tickinterval=.01, from_=0, to=.2, resolution=.05, command=lambda r: setTempRate(zone, r) )
         currentTempLabel4 = Scale( parentFrame, orient=HORIZONTAL, variable = hvacRate, tickinterval=.01, from_=0, to=.5, resolution=.05, command=lambda r: setHvacRate(zone, r) )
         
         #set initial values

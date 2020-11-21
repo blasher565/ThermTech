@@ -47,12 +47,12 @@ class iglu_area:
         self.__currentCOActual = 45 
         self.__currentActivityActual = 0
         
-        self.__extRateChange =  0  # Abs Rate of change of the currentTempature due to exterior Temp
-        self.__hvacRateChange = 0  # Abs rate of change of the currentTempature doue HVAC ( will adjust sign based on Mode)
+        self.__extRateChange =  .1  # Abs Rate of change of the currentTempature due to exterior Temp
+        self.__hvacRateChange = .3  # Abs rate of change of the currentTempature doue HVAC ( will adjust sign based on Mode)
         
         self.extRateSign =  0  # If hotter outside: "+1", if colder outside: "-1"
         self.hvacMode = 0  # If heating: "+1", if cooling outside: "-1", if standby: 0
-    
+        self.lastTempUpdate = 0;
         
     #links callback funciton to a tag
     def bind_to_tag(self, tag, callback ):
@@ -111,20 +111,20 @@ class iglu_area:
                     #   because they are combined differently
                     #
                     #Average Temp over history?
-                    iterLen = min(len( d.sensors[0]["history"] ),5 )
+                    iterLen = min(len( d.sensors[0]["history"] ),4 )
                     sum = 0;
                     for h in range(0,iterLen):
                         sum += d.sensors[0]["history"][-1-h][1]                        
                     sensorData[0] = sensorData[0] + (sum/iterLen if iterLen>0 else 0)           #Temp
                         
-                    sensorData[1] = sensorData[1] and d.sensors[1]["history"][-1][1]            #Activity
+                    sensorData[1] = sensorData[1] + d.sensors[1]["history"][-1][1]            #Activity
                     sensorData[2] = sensorData[2] + d.sensors[2]["history"][-1][1]              #Humiditiy
                     sensorData[3] = max( sensorData[3], d.sensors[3]["history"][-1][1] )        #CO
                  
             if( sensorCnt >  0):
                 self.currentTempature = sensorData[0] / sensorCnt
                 self.currentHumidity = sensorData[2] / sensorCnt
-                self.activity = sensorData[1]
+                self.activity = sensorData[1] / sensorCnt
                 self.carbonMonoxide = sensorData[3]            
 
 
@@ -177,7 +177,6 @@ class iglu_area:
     @activity.setter
     def activity(self, newActivity):
         self.__currentActivity = newActivity
-        #[ d.setMeanActivity( self.activity ) for d in self.deviceList if isinstance(d, SN.satelliteNode)]
         self.runCallback("activity")
         
     #function to modify CO level
@@ -230,8 +229,14 @@ class iglu_area:
         self.runCallback("currentTempatureActual")    
     
     #Will update the Actual Tempature of the room
-    def updateCurrentTemp( self ):
+    def updateCurrentTemp( self, timeValue ):
+
         #Get overall flow Rate
+        
+        timeDiff = timeValue - self.lastTempUpdate
+        timeDiff = max(1, timeDiff )  #makes sure positive on reset
+        self.lastTempUpdate = timeValue
+        
         rates = [d.flowRate for d in self.deviceList if isinstance( d, DA.damper )] 
         avgFlowRate = (sum(rates)/len(rates))/100 if len(rates) > 0 else 1
 
@@ -239,7 +244,7 @@ class iglu_area:
         changeExt = (self.externalTempatureChangeRate * self.extRateSign)
         changeHvac = self.hvacMode*(self.hvacTempatureChangeRate*avgFlowRate)
         
-        self.currentTempatureActual = self.currentTempatureActual  + changeExt + changeHvac
+        self.currentTempatureActual = self.currentTempatureActual  + (changeExt + changeHvac) * timeDiff
 
 if __name__=="__main__":
     

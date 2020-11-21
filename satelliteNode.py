@@ -23,7 +23,7 @@ class satelliteNode( device ):
                 
         self.sensors = {
                   0 : { "sensor" : sensor( "Tempature", mu=70, std=.05, bias=gauss(0,.1) ), "formatText": u"{}\N{DEGREE SIGN} F", "history": [] },     #Tempature
-                  1 : { "sensor" : sensor( "Activity", mu=0, std=10, bias=0 ),  "formatText": u"{}", "history": [] },       #Infrared? Person in room?
+                  1 : { "sensor" : sensor( "Activity", mu=7, std=10, bias=0 ),  "formatText": u"{}", "history": [] },       #Infrared? Person in room?
                   2 : { "sensor" : sensor( "Humidity", mu=40, std=.5, bias=gauss(0,.2)  ),  "formatText": u"{} %", "history" : [] },                   #Humidity
                   3 : { "sensor" : sensor( "C0", mu=2, std=.1, bias=gauss(0,.2) ),  "formatText": u"{} PPM", "history": [] }     #Carbon Monoxide
                 }

@@ -62,7 +62,7 @@ class iglu_simulation:
             a.hvacMode = self.hvac.mode # If heating: "+1", if cooling outside: "-1", if standby: 0
             
             #Update the Actual room temps
-            a.updateCurrentTemp()
+            a.updateCurrentTemp( newTimeValue )
 
         
     def start(self):
