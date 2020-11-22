@@ -65,7 +65,6 @@ class iglu_hvac:
     
     @opMode.setter
     def opMode( self, newMode ):
-        print(newMode)
         self.__opMode = newMode if ( newMode < 4 and newMode >= 0 ) else 3  #safety check in teh assignment
         
         #check all the illegal configurations 

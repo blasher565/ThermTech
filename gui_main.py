@@ -84,23 +84,24 @@ class gui_main():
 
         self.mainmenu = Menu(self.root)
         
-        configMenu = Menu(self.mainmenu, tearoff = 0)
-        configMenu.add_command(label = "New", command = self.emptyfunc)
-        configMenu.add_command(label = "Load", command = self.load_config)
-        configMenu.add_command(label = "Save", command = self.save_config)
-        configMenu.add_command(label = "View Messages", command = self.emptyfunc)
-        self.mainmenu.add_cascade(label="Configuration", menu=configMenu)
+        # configMenu = Menu(self.mainmenu, tearoff = 0)
+        # configMenu.add_command(label = "New", command = self.emptyfunc)
+        # configMenu.add_command(label = "Load", command = self.load_config)
+        # configMenu.add_command(label = "Save", command = self.save_config)
+        # configMenu.add_command(label = "View Messages", command = self.emptyfunc)
+        # self.mainmenu.add_cascade(label="Configuration", menu=configMenu)
         
         
-        testMenu = Menu(self.mainmenu, tearoff = 0)
-        testMenu.add_command(label = "Create", command = self.create_test)
-        testMenu.add_command(label = "Load", command = self.load_test)
-        testMenu.add_command(label = "Modify", command = self.modify_test)
-        self.mainmenu.add_cascade(label="Testing", menu=testMenu)
+        # testMenu = Menu(self.mainmenu, tearoff = 0)
+        # testMenu.add_command(label = "Create", command = self.create_test)
+        # testMenu.add_command(label = "Load", command = self.load_test)
+        # testMenu.add_command(label = "Modify", command = self.modify_test)
+        # self.mainmenu.add_cascade(label="Testing", menu=testMenu)
         
         
         helpMenu = Menu(self.mainmenu, tearoff = 0)
-        helpMenu.add_command(label = "Documentation", command = self.emptyfunc)
+        helpMenu.add_command(label = "About", command = self.emptyfunc)
+        helpMenu.add_command(label = "Log", command = self.emptyfunc)
         self.mainmenu.add_cascade(label = "Help", menu = helpMenu)
         
         self.mainmenu.add_command(label = "Exit", command=self.root.destroy)  
