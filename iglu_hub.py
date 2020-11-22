@@ -235,7 +235,6 @@ class iglu_hub:
         minTimeDiff = 10 
         
         #( 0 = OFF, 1=Heat Only, 2=Cool Only, 3=Auto )
-        print (self.hvac.opMode)
         canCool = (self.hvac.opMode == 2) or (self.hvac.opMode == 3)
         canHeat = (self.hvac.opMode == 1) or (self.hvac.opMode == 3)
         
