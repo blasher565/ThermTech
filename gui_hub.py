@@ -298,7 +298,7 @@ class gui_hub:
             self.hub.hvac.bind_to_tag( ("hub_gui", "mode" ), lambda: canvas.itemconfigure(modeText, text=getHVACMode() ) )
         
 
-        getHVACFan = lambda: u"Fan: {:<5}".format( ("Always On" if self.hub.hvac.fanAlwaysOn else "On" if self.hub.hvac.fanOn else "Off") if self.hub.hvac else "Off" )
+        getHVACFan = lambda: u"Fan: {:<5}".format(  ( "On" if self.hub.hvac.fanOn else "Off") if self.hub.hvac else "Off" )
         fanText = canvas.create_text(xSummary, ySummary+90, text=getHVACFan(), font="Arial 25", fill="white", anchor="w", tags=('mainWindow', 'HVACMode') )
         if( self.hub.hvac ):
             self.hub.hvac.bind_to_tag( ("hub_gui", "fanOn" ), lambda: canvas.itemconfigure(fanText, text=getHVACFan() ) )
@@ -650,7 +650,7 @@ class gui_hub:
         
         canvas.create_text( 50, 80, text="HVAC Mode: ", font=("Arial 25 underline"), anchor="nw", fill="#ffffff",  tags=('mainWindow', 'hvacHeading') )       
         
-        global settings_bt_bg_hov, settings_bt_bg_sel, settings_bt_off, settings_bt_heat, settings_bt_snowflake, settings_bt_autobot, settings_bt_off
+        global settings_bt_bg_hov, settings_bt_bg_sel, settings_bt_off, settings_bt_heat, settings_bt_snowflake, settings_bt_auto, settings_bt_off
         global fan_bt_on, fan_bt_off
         
         buttonSize = 100
@@ -661,8 +661,8 @@ class gui_hub:
         settings_bt_bg_def = resizeImage(r"./images/bgDefault.png", buttonSizeOutter, buttonSizeOutter)   
         settings_bt_heat = resizeImage(r"./images/heat.png", buttonSize, buttonSize)   
         settings_bt_snowflake = resizeImage(r"./images/snowflake.png", buttonSize, buttonSize)          
-        settings_bt_autobot = resizeImage(r"./images/autobot.png", buttonSize, buttonSize)
-        settings_bt_off = resizeImage(r"./images/OFF.png", buttonSize, buttonSize)
+        settings_bt_auto = resizeImage(r"./images/igloo_settings.png", buttonSize, buttonSize)
+        settings_bt_off = resizeImage(r"./images/off_settings.png", buttonSize, buttonSize)
         fan_bt_on = resizeImage(r"./images/fan_on_but.png", 100, 40)
         fan_bt_off = resizeImage(r"./images/fan_off_but.png", 100, 40)
         
@@ -716,7 +716,7 @@ class gui_hub:
                 canvas.tag_unbind(topImg, "<Enter>")
                 
                 #assign to hvac unit
-                if self.hub.hvac and opMode:
+                if self.hub.hvac and opMode != None:
                    self.hub.hvac.opMode = opMode 
                    
                 if self.hub.hvac and fanMode:
@@ -729,7 +729,7 @@ class gui_hub:
             
         createButton(150,220, settings_bt_heat,  selected=(self.hub.hvac and self.hub.hvac.opMode == 1), opMode = 1)
         createButton(320,220, settings_bt_snowflake,  selected=(self.hub.hvac and self.hub.hvac.opMode == 2), opMode = 2)
-        createButton(150,390, settings_bt_autobot,  selected=(self.hub.hvac and self.hub.hvac.opMode == 3), opMode = 3)
+        createButton(150,390, settings_bt_auto,  selected=(self.hub.hvac and self.hub.hvac.opMode == 3), opMode = 3)
         createButton(320,390, settings_bt_off,  selected=(self.hub.hvac and self.hub.hvac.opMode == 0), opMode = 0)
                 
         fanLabel = canvas.create_text( 50, 495, text="Fan Always On: ", font=("Arial 25 underline"), anchor="nw", fill="#ffffff",  tags=('mainWindow', 'hvacFanHeading') )  
@@ -759,11 +759,15 @@ class gui_hub:
 if __name__ == "__main__":
     mainWindow = Tk()
     import iglu_hub
+    import iglu_hvac
     xVal = 600;
     yVal = 623;
     mainWindow.geometry(str(xVal)+"x"+str(yVal)) 
     mainWindow.update()
     gui = gui_hub()
+
     gui.hub = iglu_hub.iglu_hub()
+    gui.hub.hvac = iglu_hvac.iglu_hvac()
+    
     gui.drawHub(mainWindow)
     mainloop()

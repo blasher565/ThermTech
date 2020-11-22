@@ -29,7 +29,7 @@ class iglu_hub:
         
         self.hvac = None
         
-        self.addArea(name="Iglu Home", numSensor=1)
+        self.addArea(name="Iglu Home", numSensor=1, numDamper=1)
         
         #bind the update function to the clock
         iglu_Timer.globalTimer.bind_to(self.tick)
@@ -234,6 +234,17 @@ class iglu_hub:
         trigThresh = 1
         minTimeDiff = 10 
         
+        #( 0 = OFF, 1=Heat Only, 2=Cool Only, 3=Auto )
+        print (self.hvac.opMode)
+        canCool = (self.hvac.opMode == 2) or (self.hvac.opMode == 3)
+        canHeat = (self.hvac.opMode == 1) or (self.hvac.opMode == 3)
+        
+        #check for bad mode setting
+        #  Ignore the timers?
+        if (self.hvac.opMode == 2 and self.hvac.mode == 1) or ( self.hvac.opMode == 1 and self.hvac.mode == -1 ):
+            self.hvac.stop()
+        
+        
         for i,a in enumerate(self.areaList):
             for d in a.deviceList:
                 if "updateSensors" in dir(d):
@@ -268,9 +279,9 @@ class iglu_hub:
             avgCold = (coldSize/max(1,numCold))
             avgHot = (hotSize/max(1,numHot))
             
-            if( numCold > numHot or  avgCold > avgHot):
+            if(( numCold > numHot or  avgCold > avgHot) and canHeat ):
                 self.hvac.startHeating()
-            elif( numCold < numHot or avgCold < avgHot):
+            elif(( numCold < numHot or avgCold < avgHot) and canCool ):
                 self.hvac.startCooling()
             elif( numCold == numHot and avgCold == avgHot):
                 self.hvac.stop()
