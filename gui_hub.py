@@ -400,7 +400,7 @@ class gui_hub:
     def drawAreaDetailScreen(self, canvas, screenSizex, screenSizey, area):
         self.clearAllScreen( canvas )
         self.hub.delete_bind_tag( "hub_gui" )
-        self.currentScreen = "areaDetail"
+        self.currentScreen = "areas"
 
         xNameOffset = 30
         yNameOffset = 40
@@ -645,8 +645,117 @@ class gui_hub:
     
     def drawSettingsScreen( self, canvas, screenSizex, screenSizey ):
         self.clearAllScreen( canvas )
+        self.hub.delete_bind_tag( "hub_gui" ) 
+        self.currentScreen = "settings"
+        
+        canvas.create_text( 50, 80, text="HVAC Mode: ", font=("Arial 25 underline"), anchor="nw", fill="#ffffff",  tags=('mainWindow', 'hvacHeading') )       
+        
+        global settings_bt_bg_hov, settings_bt_bg_sel, settings_bt_off, settings_bt_heat, settings_bt_snowflake, settings_bt_autobot, settings_bt_off
+        global fan_bt_on, fan_bt_off
+        
+        buttonSize = 100
+        buttonSizeOutter = 120
+                
+        settings_bt_bg_hov = resizeImage(r"./images/bgHover.png", buttonSizeOutter, buttonSizeOutter)  
+        settings_bt_bg_sel = resizeImage(r"./images/bgSelected.png", buttonSizeOutter, buttonSizeOutter)   
+        settings_bt_bg_def = resizeImage(r"./images/bgDefault.png", buttonSizeOutter, buttonSizeOutter)   
+        settings_bt_heat = resizeImage(r"./images/heat.png", buttonSize, buttonSize)   
+        settings_bt_snowflake = resizeImage(r"./images/snowflake.png", buttonSize, buttonSize)          
+        settings_bt_autobot = resizeImage(r"./images/autobot.png", buttonSize, buttonSize)
+        settings_bt_off = resizeImage(r"./images/OFF.png", buttonSize, buttonSize)
+        fan_bt_on = resizeImage(r"./images/fan_on_but.png", 100, 40)
+        fan_bt_off = resizeImage(r"./images/fan_off_but.png", 100, 40)
+        
+        
+        def createButton( x, y, fgImage, selected=False, opMode=None, fanMode=None ):
+            
+            if not selected:
+                bottomImgCur = canvas.create_image(x, y, image=settings_bt_bg_def,  tags=('mainWindow') )
+                topImg = canvas.create_image(x, y, image=fgImage,  tags=('mainWindow') )  
+            else:
+                bottomImgCur = canvas.create_image(x, y, image=settings_bt_bg_sel,  tags=('mainWindow','selectedModeBg') )
+                topImg = canvas.create_image(x, y, image=fgImage,  tags=('mainWindow','selectedModeImg') )  
 
+            if not selected:
+                canvas.tag_bind( bottomImgCur, "<Enter>", lambda e: canvas.itemconfigure(bottomImgCur, image=settings_bt_bg_hov  ) )
+                canvas.tag_bind( topImg, "<Enter>", lambda e: canvas.itemconfigure(bottomImgCur, image=settings_bt_bg_hov  ) )            
+            
+                canvas.tag_bind( bottomImgCur, "<Leave>", lambda e: canvas.itemconfigure(bottomImgCur, image=settings_bt_bg_def ) )
+                canvas.tag_bind( topImg, "<Leave>", lambda e: canvas.itemconfigure(bottomImgCur, image=settings_bt_bg_def ) )
+            else:
+                canvas.tag_bind( bottomImgCur, "<Enter>", lambda e: canvas.itemconfigure(bottomImgCur, image=settings_bt_bg_sel  ) )
+                canvas.tag_bind( topImg, "<Enter>", lambda e: canvas.itemconfigure(bottomImgCur, image=settings_bt_bg_sel  ) )            
+            
+                canvas.tag_bind( bottomImgCur, "<Leave>", lambda e: canvas.itemconfigure(bottomImgCur, image=settings_bt_bg_sel ) )
+                canvas.tag_bind( topImg, "<Leave>", lambda e: canvas.itemconfigure(bottomImgCur, image=settings_bt_bg_sel ) )
 
+            def onClick():
+                #configure old selection
+                oldBg = canvas.find_withtag('selectedModeBg')
+                oldImg = canvas.find_withtag('selectedModeImg')
+                if oldBg or oldImg:
+                    canvas.dtag(oldBg, 'all')
+                    canvas.dtag(oldImg, 'all')
+                    
+                    canvas.itemconfigure(oldBg, image=settings_bt_bg_def, tags=('mainWindow') )
+                    canvas.itemconfigure(oldImg, tags=('mainWindow') )
+                    
+                    canvas.tag_bind( oldBg, "<Enter>", lambda e: canvas.itemconfigure(oldBg, image=settings_bt_bg_hov  ) )
+                    canvas.tag_bind( oldImg, "<Enter>", lambda e: canvas.itemconfigure(oldBg, image=settings_bt_bg_hov  ) )            
+                
+                    canvas.tag_bind( oldBg, "<Leave>", lambda e: canvas.itemconfigure(oldBg, image=settings_bt_bg_def ) )
+                    canvas.tag_bind( oldImg, "<Leave>", lambda e: canvas.itemconfigure(oldBg, image=settings_bt_bg_def ) )
+                                    
+                #config new
+                canvas.itemconfigure(bottomImgCur, image=settings_bt_bg_sel, tags=('mainWindow','selectedModeBg') )
+                canvas.itemconfigure(topImg, image=fgImage, tags=('mainWindow','selectedModeImg') )
+                
+                canvas.tag_unbind(bottomImgCur, "<Leave>")
+                canvas.tag_unbind(topImg, "<Leave>")
+                canvas.tag_unbind(bottomImgCur, "<Enter>")
+                canvas.tag_unbind(topImg, "<Enter>")
+                
+                #assign to hvac unit
+                if self.hub.hvac and opMode:
+                   self.hub.hvac.opMode = opMode 
+                   
+                if self.hub.hvac and fanMode:
+                   self.hub.hvac.fanAlwaysOn = fanMode
+                                
+                
+            canvas.tag_bind( bottomImgCur, "<Button-1>", lambda e: onClick()  )
+            canvas.tag_bind( topImg, "<Button-1>", lambda e: onClick() )    
+            
+            
+        createButton(150,220, settings_bt_heat,  selected=(self.hub.hvac and self.hub.hvac.opMode == 1), opMode = 1)
+        createButton(320,220, settings_bt_snowflake,  selected=(self.hub.hvac and self.hub.hvac.opMode == 2), opMode = 2)
+        createButton(150,390, settings_bt_autobot,  selected=(self.hub.hvac and self.hub.hvac.opMode == 3), opMode = 3)
+        createButton(320,390, settings_bt_off,  selected=(self.hub.hvac and self.hub.hvac.opMode == 0), opMode = 0)
+                
+        fanLabel = canvas.create_text( 50, 495, text="Fan Always On: ", font=("Arial 25 underline"), anchor="nw", fill="#ffffff",  tags=('mainWindow', 'hvacFanHeading') )  
+        b = canvas.bbox(fanLabel)
+
+                
+                
+        def updateAlwaysOn():
+            img = canvas.find_withtag('fanStatus')
+            
+            if self.hub.hvac:
+                if self.hub.hvac.fanAlwaysOn == True:
+                    self.hub.hvac.fanAlwaysOn = False
+                    canvas.itemconfigure(img, image= fan_bt_off )
+                    
+                elif self.hub.hvac.fanAlwaysOn == False:
+                    self.hub.hvac.fanAlwaysOn = True
+                    canvas.itemconfigure(img, image= fan_bt_on )
+
+            
+        
+        
+        fanImg = canvas.create_image(b[2]+20, b[1], image= fan_bt_on if (self.hub.hvac and  self.hub.hvac.fanAlwaysOn ) else fan_bt_off, anchor="nw", tags=('mainWindow', 'fanStatus' ) )         
+        canvas.tag_bind( fanImg, "<Button-1>", lambda e: updateAlwaysOn()  )
+
+        
 if __name__ == "__main__":
     mainWindow = Tk()
     import iglu_hub

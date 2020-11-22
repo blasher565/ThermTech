@@ -12,7 +12,8 @@ Simple HVAC class which holds the informaiton about the
 class iglu_hvac:
     def __init__(self, mode = 0, cfm = 2000, exteriorTemp = 70, fanAlwaysOn=False ):
 
-        self.__mode = mode
+        self.__mode = mode # current running mode
+        self.__opMode = 3 # current operational Settings  ( 0 = OFF, 1=Heat Only, 2=Cool Only, 3=Auto )
         self.__cfm = cfm;  # cubic feet per minute
         self.__exteriorTemp = exteriorTemp
         
@@ -57,6 +58,15 @@ class iglu_hvac:
         self.__mode = newMode
         self.runCallback( "mode")
         
+        
+    @property
+    def opMode( self ):
+        return self.__opMode
+    
+    @opMode.setter
+    def opMode( self, newMode ):
+        self.__opMode = newMode if ( newMode < 4 and newMode >= 0 ) else 3  #safety check in teh assignment
+        self.runCallback( "opMode")
   
     def modePretty( self ):
         return  "Standby" if self.__mode == 0 else ( "Cooling"  if self.__mode == -1 else "Heating")        
