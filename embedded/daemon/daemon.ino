@@ -2,18 +2,53 @@
  * First try at Iglu ATMega328p daemon
  * Programmer: Christian Wagner
  * Date Created: 11/02/2020
- * Date Modified: 11/02/2020
+ * Date Modified: 11/24/2020
  */
+
+#include <stdlib.h>
+#include <OneWire.h>
+#include <DallasTemperature.h>
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
+#include <NewPing.h>
+#include <Servo.h>
+#define MAX_DISTANCE 400
 
 // flags
 const bool DEBUG = true;
 const bool COMM_ENABLE = true;
 
 // PIN setup
-const int RELAY_PIN_1 = 8;
-const int RELAY_PIN_2 = 9;
-const int RELAY_PIN_3 = 10;
-const int RELAY_PIN_4 = 11;
+const int COMPRESSOR_PIN = 8; // digital
+const int REVERSAL_PIN = 9; // digital
+const int FAN_PIN = 10; // digital
+const int TEMPERATURE_PIN = 4; // analog
+const int POTENTIOMETER_PIN = A3; // set point dial
+const int TRIGGER_PIN = 2; // trigger of sonar sensor
+const int ECHO_PIN = 3; // echo of sonar sensor
+const int SERVO_PIN = 5; // servo control pin
+
+Servo damperControl; // control servo for the damper
+
+// setup sonar sensor
+NewPing sonar(TRIGGER_PIN, ECHO_PIN, MAX_DISTANCE);
+
+// setup LCD screen
+LiquidCrystal_I2C lcd(0x27,16,2);
+
+// setup single wire sensor tx/rx
+OneWire oneWire(TEMPERATURE_PIN);
+DallasTemperature sensors(&oneWire);
+
+// temperature values
+int Vo;
+float R1 = 1002;
+float logR2;
+float R2;
+float T;
+float c1 = 1.009249522e-03;
+float c2 = 2.378405444e-04;
+float c3 = 2.019202697e-07;
 
 // init parameters
 const int NUM_INIT_RELAYS = 3;
@@ -21,21 +56,28 @@ const int NUM_INIT_RELAYS = 3;
 // the setup function runs once when you press reset or power the board
 void setup() {
   // setup pins for relay control
-  pinMode(RELAY_PIN_1, OUTPUT);
-  digitalWrite(RELAY_PIN_1, HIGH);
+  pinMode(COMPRESSOR_PIN, OUTPUT);
+  digitalWrite(COMPRESSOR_PIN, HIGH);
   delay(50);
-  pinMode(RELAY_PIN_2, OUTPUT);
-  digitalWrite(RELAY_PIN_2, HIGH);
+  pinMode(REVERSAL_PIN, OUTPUT);
+  digitalWrite(REVERSAL_PIN, HIGH);
   delay(50);
-  pinMode(RELAY_PIN_3, OUTPUT);
-  digitalWrite(RELAY_PIN_3, HIGH);
-  delay(50);
-  pinMode(RELAY_PIN_4, OUTPUT);
-  digitalWrite(RELAY_PIN_4, HIGH);
+  pinMode(FAN_PIN, OUTPUT);
+  digitalWrite(FAN_PIN, HIGH);
   delay(50);
 
   // start comms if enabled
   if(COMM_ENABLE) Serial.begin(9600);
+
+  // start OneWire sensor
+  sensors.begin();
+
+  // init screen
+  lcd.init(); //initialize the lcd
+  lcd.backlight(); //turn on the backlight
+
+  damperControl.attach(SERVO_PIN);
+  damperControl.write(0);
 
   // signal start
   if(DEBUG && COMM_ENABLE) Serial.println("Doing init");
@@ -52,37 +94,31 @@ void setup() {
 
 // function for init
 bool doInit() {
-  digitalWrite(RELAY_PIN_1, LOW);
-  digitalWrite(RELAY_PIN_2, LOW);
-  digitalWrite(RELAY_PIN_3, LOW);
-  digitalWrite(RELAY_PIN_4, LOW);
+  digitalWrite(COMPRESSOR_PIN, LOW);
+  digitalWrite(REVERSAL_PIN, LOW);
+  digitalWrite(FAN_PIN, LOW);
 
   delay(1000);
 
-  digitalWrite(RELAY_PIN_1, HIGH);
-  digitalWrite(RELAY_PIN_2, HIGH);
-  digitalWrite(RELAY_PIN_3, HIGH);
-  digitalWrite(RELAY_PIN_4, HIGH);
+  digitalWrite(COMPRESSOR_PIN, HIGH);
+  digitalWrite(REVERSAL_PIN, HIGH);
+  digitalWrite(FAN_PIN, HIGH);
 
   delay(1000);
 
   for(int i = 0; i < NUM_INIT_RELAYS; i++) {
     // try all relays
-    digitalWrite(RELAY_PIN_1, LOW);
+    digitalWrite(COMPRESSOR_PIN, LOW);
     delay(50);
-    digitalWrite(RELAY_PIN_1, HIGH);
+    digitalWrite(COMPRESSOR_PIN, HIGH);
     delay(50);
-    digitalWrite(RELAY_PIN_2, LOW);
+    digitalWrite(REVERSAL_PIN, LOW);
     delay(50);
-    digitalWrite(RELAY_PIN_2, HIGH);
+    digitalWrite(REVERSAL_PIN, HIGH);
     delay(50);
-    digitalWrite(RELAY_PIN_3, LOW);
+    digitalWrite(FAN_PIN, LOW);
     delay(50);
-    digitalWrite(RELAY_PIN_3, HIGH);
-    delay(50);
-    digitalWrite(RELAY_PIN_4, LOW);
-    delay(50);
-    digitalWrite(RELAY_PIN_4, HIGH);
+    digitalWrite(FAN_PIN, HIGH);
     delay(500);
   }
 
@@ -91,47 +127,105 @@ bool doInit() {
 
 // the loop function runs over and over again forever
 void loop() {
-  // check for serial commands
-  if(Serial.available() > 0) {
-    // get and confirm serial string
-    String serialString = Serial.readString();
-    
-    if(DEBUG && COMM_ENABLE) Serial.print("RX: " + serialString);
-    
-    serialString.trim();
-    
-    // check for commands
-    if(serialString.equals("STOP")) {
-      // check for debug
-      Serial.println("STOP called! Ending daemon.");
-      // wait for serial to finish
-      delay(5000);
-      // stop daemon
-      digitalWrite(RELAY_PIN_1, HIGH);
-      digitalWrite(RELAY_PIN_2, HIGH);
-      digitalWrite(RELAY_PIN_3, HIGH);
-      digitalWrite(RELAY_PIN_4, HIGH);
-      // kill process
-      exit(0);
-    } else if(serialString.equals("R1,1")) {
-      digitalWrite(RELAY_PIN_1, LOW);
-    } else if(serialString.equals("R1,0")) {
-      digitalWrite(RELAY_PIN_1, HIGH);
-    } else if(serialString.equals("R2,1")) {
-      digitalWrite(RELAY_PIN_2, LOW);
-    } else if(serialString.equals("R2,0")) {
-      digitalWrite(RELAY_PIN_2, HIGH);
-    } else if(serialString.equals("R3,1")) {
-      digitalWrite(RELAY_PIN_3, LOW);
-    } else if(serialString.equals("R3,0")) {
-      digitalWrite(RELAY_PIN_3, HIGH);
-    } else if(serialString.equals("R4,1")) {
-      digitalWrite(RELAY_PIN_4, LOW);
-    } else if(serialString.equals("R4,0")) {
-      digitalWrite(RELAY_PIN_4, HIGH);
-    }
+  // get temperature readings
+  sensors.requestTemperatures();
+  // write onto LCD
+  lcd.setCursor(0, 0);
+  lcd.print("Current: ");
+  int tempInt = 1.8 * sensors.getTempCByIndex(0) + 32;
+  lcd.print(tempInt);//print the temperature on lcd1602
+  lcd.print(char(223));//print the unit" ℉ "
+  int setPointValue = analogRead(POTENTIOMETER_PIN);//read the value from the sensor
+  setPointValue /= 10;
+  // protections for set point
+  if (setPointValue > 99) {
+    setPointValue = 99;
+  } else if (setPointValue < 50) {
+    setPointValue = 50;
+  }
+  
+  setPointValue = setPointValue % 120;
+  lcd.setCursor(0, 1);
+  lcd.print("Set: ");
+  lcd.print(setPointValue);
+  lcd.print(char(223));//print the unit" ℉ "
 
-    if(COMM_ENABLE) Serial.println("1");
-    
-  } 
+  // 0 = standby
+  // 1 = heating
+  // -1 = cooling
+  int currentMode = 0;
+
+  int diff = abs(setPointValue - tempInt);
+
+  // decide system mode
+  lcd.setCursor(9, 1);
+  if (tempInt < setPointValue && diff > 1) {
+    // mode is heating
+    lcd.print("Heat   ");
+    currentMode = 1;
+  } else if (tempInt > setPointValue && diff > 1) {
+    // mode is cooling
+    lcd.print("Cool   ");
+    currentMode = -1;
+  } else if(diff <= 1) {
+    lcd.print("Standby");
+    currentMode = 0;
+  }
+
+  // get distance value
+  unsigned int distance = sonar.ping() / US_ROUNDTRIP_CM;
+
+  // turn backlight off if distance is large (no one is around)
+  if (distance < 100) {
+    lcd.backlight();
+  } else {
+    lcd.noBacklight();
+  }
+
+  Serial.println(diff);
+  if(diff < 1) {
+    if(diff == 0) {
+      damperControl.write(0);
+    } else {
+      damperControl.write(9);
+    }
+  } else if(diff < 2) {
+    damperControl.write(18);
+  } else if(diff < 3) {
+    damperControl.write(27);
+  } else if(diff < 4) {
+    damperControl.write(34);
+  } else if(diff < 5) {
+    damperControl.write(45);
+  } else if(diff < 6) {
+    damperControl.write(54);
+  } else if(diff < 7) {
+    damperControl.write(63);
+  } else if(diff < 8) {
+    damperControl.write(72);
+  } else if(diff < 9) {
+    damperControl.write(81);
+  } else if(diff >= 10) {
+    damperControl.write(90);
+  }
+
+  if (currentMode == 0) {
+    // system is off
+    digitalWrite(COMPRESSOR_PIN, HIGH);
+    digitalWrite(REVERSAL_PIN, HIGH);
+    digitalWrite(FAN_PIN, HIGH);
+  } else if (currentMode == 1) {
+    // system should heat
+    digitalWrite(COMPRESSOR_PIN, LOW);
+    digitalWrite(REVERSAL_PIN, HIGH);
+    digitalWrite(FAN_PIN, LOW);
+  } else if (currentMode == -1) {
+    // system should cool
+    digitalWrite(COMPRESSOR_PIN, LOW);
+    digitalWrite(REVERSAL_PIN, LOW);
+    digitalWrite(FAN_PIN, LOW);
+  }
+
+  // 1 second delay
+  delay(1000);
 }
